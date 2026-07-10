@@ -4,7 +4,8 @@ class Lexdrill::CLI
   COMMANDS = {
     print_version: %w[version --version -v],
     print_help: %w[help --help -h],
-    run_next: %w[next]
+    run_next: %w[next],
+    run_hook: %w[hook]
   }.freeze
 
   def self.start(argv = ARGV)
@@ -40,6 +41,7 @@ class Lexdrill::CLI
         lexdrill version   Print the gem version
         lexdrill help      Show this help
         lexdrill next      Print the current word and advance
+        lexdrill hook <zsh|bash>   Print the shell integration snippet
     HELP
     0
   end
@@ -54,6 +56,26 @@ class Lexdrill::CLI
 
   def print_no_words(path)
     warn "lexdrill: no words found in #{path}"
+    1
+  end
+
+  def run_hook
+    shell = argv[1]
+    return print_hook_usage unless shell
+
+    print_hook_snippet(shell)
+  end
+
+  def print_hook_usage
+    warn "usage: lexdrill hook <zsh|bash>"
+    1
+  end
+
+  def print_hook_snippet(shell)
+    puts Lexdrill::ShellSnippet.for(shell)
+    0
+  rescue ArgumentError => error
+    warn "lexdrill: #{error.message}"
     1
   end
 

@@ -69,16 +69,30 @@ milestones, once the core is solid.
 - **Verify:** unit tests + a manual run showing the word advancing (and
   wrapping) across repeated invocations.
 
-### Later milestones (not detailed yet — revisit after milestone 4)
-- Shell hook integration (zsh/bash, fires before each prompt).
+### 5. Shell hook integration (zsh/bash)
+- `Lexdrill::ShellSnippet` generates the integration snippet for
+  `lexdrill hook zsh|bash`.
+- zsh: registers a `precmd_functions` entry; bash: prepends to
+  `PROMPT_COMMAND`. Both call `command lexdrill next 2>/dev/null` (bypasses
+  aliases, swallows stderr so a misconfigured/missing `.drill.txt` doesn't
+  spam every prompt) and are idempotent if the rc file gets sourced twice.
+- Usage: `eval "$(lexdrill hook zsh)"` (or `bash`) added to `.zshrc`/
+  `.bashrc`.
+- **Verify:** unit tests for the generated snippets + a manual run
+  simulating `precmd_functions`/`PROMPT_COMMAND` firing in real zsh/bash
+  processes, confirming the word advances on each simulated prompt and
+  double-sourcing doesn't double-register.
+
+### Later milestones (not detailed yet)
 - Throttling and any spaced-repetition scheduling refinement.
 - Google Sheets–backed word list (the original vision), replacing/
   extending the plain text file source.
-- Actual publish to rubygems.org.
 
 ## Status
 
 - [x] Milestone 1 — Gem scaffold + quality tooling
-- [ ] Milestone 2 — Word list source
-- [ ] Milestone 3 — Local interaction store
-- [ ] Milestone 4 — `lexdrill next` command
+- [x] Milestone 2 — Word list source
+- [x] Milestone 3 — Local interaction store
+- [x] Milestone 4 — `lexdrill next` command
+- [x] Milestone 5 — Shell hook integration
+- [x] Published to rubygems.org (`lexdrill` 0.2.0)

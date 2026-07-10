@@ -43,5 +43,25 @@ RSpec.describe Lexdrill::CLI do
         expect(exit_code).to eq(1)
       end
     end
+
+    it "prints the zsh hook snippet" do
+      expect { described_class.new(%w[hook zsh]).start }.to output(/lexdrill_precmd/).to_stdout
+    end
+
+    it "prints the bash hook snippet" do
+      expect { described_class.new(%w[hook bash]).start }.to output(/lexdrill_precmd/).to_stdout
+    end
+
+    it "reports usage on stderr and returns 1 when hook is given no shell" do
+      exit_code = nil
+      expect { exit_code = described_class.new(["hook"]).start }.to output(/usage/).to_stderr
+      expect(exit_code).to eq(1)
+    end
+
+    it "reports the unsupported shell on stderr and returns 1" do
+      exit_code = nil
+      expect { exit_code = described_class.new(%w[hook fish]).start }.to output(/fish/).to_stderr
+      expect(exit_code).to eq(1)
+    end
   end
 end
