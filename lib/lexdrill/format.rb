@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-# Global display mode for `next`'s output: "full" (position + loop info) or
-# "simple" (just the word). Lives at ~/.drill.format; defaults to "full".
+# Global display mode for `next`'s output: "simple" (the drill sign + word)
+# or "full" (position + loop info). Lives at ~/.drill.format; defaults to
+# "simple".
 module Lexdrill::Format
   PATH = File.join(Dir.home, ".drill.format")
   SIMPLE = "simple"
@@ -9,10 +10,10 @@ module Lexdrill::Format
   VALID = [SIMPLE, FULL].freeze
 
   def self.current
-    return FULL unless File.exist?(PATH)
+    return SIMPLE unless File.exist?(PATH)
 
     value = File.read(PATH).strip
-    VALID.include?(value) ? value : FULL
+    VALID.include?(value) ? value : SIMPLE
   end
 
   def self.set(mode)

@@ -131,8 +131,9 @@ milestones, once the core is solid.
 
 ### 9. Output style (`format`)
 - `Lexdrill::Format` is a global config (`~/.drill.format`, defaulting to
-  `"full"`) with two modes: `drill format simple` (just the bare word)
-  and `drill format full` (the richer, default display).
+  `"simple"`) with two modes: `drill format simple` (the default, just the
+  drill sign and the bare word) and `drill format full` (the richer
+  position/loop display).
 - Full mode shows `counter/total/[loop_start-loop_end]loop_number/
   total_loops⟳` on one line, the word on the next — `Beat.loop_info`
   now returns a `LoopInfo` struct (index, chunk_start, chunk_end,

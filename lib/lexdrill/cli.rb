@@ -55,7 +55,7 @@ class Lexdrill::CLI
         drill beat none                 Disable the rhythm
         drill polka|waltz|rock|jazz|jiga|balkan|samba [repetitions]
                         Shorthand for a fixed loop size (2 through 8, in order)
-        drill format simple|full   Set the output style (full is the default)
+        drill format simple|full   Set the output style (simple is the default)
     HELP
     0
   end

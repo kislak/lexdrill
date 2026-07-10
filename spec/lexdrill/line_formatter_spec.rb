@@ -17,8 +17,9 @@ RSpec.describe Lexdrill::LineFormatter do
   end
 
   describe ".format" do
-    it "in full mode (the default), formats counter/total, the drill sign, [chunk], a newline, the word" do
+    it "in full mode, formats counter/total, the drill sign, [chunk], a newline, the word" do
       File.write(Lexdrill::WordList::PATH, "alpha\nbeta\ngamma\n")
+      Lexdrill::Format.set("full")
       Lexdrill::WordList.next # advances the counter to 1
 
       expect(described_class.format("alpha")).to eq("1/3⟳[1-3]\nalpha")
@@ -26,6 +27,7 @@ RSpec.describe Lexdrill::LineFormatter do
 
     it "shows the word's own position and current loop range when a beat is configured" do
       File.write(Lexdrill::WordList::PATH, "a\nb\nc\nd\ne\nf\n")
+      Lexdrill::Format.set("full")
       Lexdrill::Beat.set(3, 2) # loop of 3, repeated 2x: a,b,c,a,b,c,d,e,f,d,e,f
 
       # format must be called immediately after each next, matching real usage -
@@ -46,9 +48,8 @@ RSpec.describe Lexdrill::LineFormatter do
       )
     end
 
-    it "in simple mode, is the blue drill sign, a space, then the word in a random color, on one line" do
+    it "in simple mode (the default), is the blue drill sign, a space, then the word in a random color, on one line" do
       File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
-      Lexdrill::Format.set("simple")
       Lexdrill::WordList.next
 
       result = described_class.format("alpha")

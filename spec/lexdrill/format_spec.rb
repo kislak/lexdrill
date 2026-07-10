@@ -11,29 +11,29 @@ RSpec.describe Lexdrill::Format do
   before { stub_const("Lexdrill::Format::PATH", @path) }
 
   describe ".current" do
-    it "defaults to full" do
-      expect(described_class.current).to eq("full")
-    end
-
-    it "reflects the persisted mode after .set" do
-      described_class.set("simple")
+    it "defaults to simple" do
       expect(described_class.current).to eq("simple")
     end
 
-    it "falls back to full for a corrupt/unknown value" do
-      File.write(@path, "bogus")
+    it "reflects the persisted mode after .set" do
+      described_class.set("full")
       expect(described_class.current).to eq("full")
+    end
+
+    it "falls back to simple for a corrupt/unknown value" do
+      File.write(@path, "bogus")
+      expect(described_class.current).to eq("simple")
     end
   end
 
   describe ".simple?" do
-    it "is false by default" do
-      expect(described_class.simple?).to be false
+    it "is true by default" do
+      expect(described_class.simple?).to be true
     end
 
-    it "is true once set to simple" do
-      described_class.set("simple")
-      expect(described_class.simple?).to be true
+    it "is false once set to full" do
+      described_class.set("full")
+      expect(described_class.simple?).to be false
     end
   end
 end

@@ -18,7 +18,7 @@ RSpec.describe Lexdrill::CLI do
       expect(exit_code).to eq(1)
     end
 
-    it "prints the current word and returns 0" do
+    it "prints the current word in full format and returns 0" do
       Dir.mktmpdir("lexdrill-cli-next-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
@@ -27,6 +27,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
+        Lexdrill::Format.set("full")
 
         exit_code = nil
         expect do
@@ -80,6 +81,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
+        Lexdrill::Format.set("full")
         Lexdrill::Toggle.stop
 
         exit_code = nil

@@ -41,8 +41,14 @@ cherry
 ```
 
 Run `drill next` to print the current word and advance to the next one.
-There are two output styles (`drill format simple|full`, `full` is the
+There are two output styles (`drill format simple|full`, `simple` is the
 default):
+
+**simple** — the drill sign (always blue), a space, then the word (in a
+separately-picked random color), all on one line:
+```
+⟳ apple
+```
 
 **full** — `counter/total⟳[loop_start-loop_end]` on one line, the word on
 the next, in a randomly-picked color:
@@ -51,12 +57,6 @@ the next, in a randomly-picked color:
 apple
 ```
 (word 1 of 6 total; currently in the loop spanning words 1-3)
-
-**simple** — the drill sign (always blue), a space, then the word (in a
-separately-picked random color), all on one line:
-```
-⟳ apple
-```
 
 ### Shell integration (one-time setup)
 
@@ -146,4 +146,4 @@ There are also named shortcuts for common loop sizes, one word/phrase apart:
 | `drill hook zsh\|bash` | Print the shell integration snippet (used above) |
 | `drill beat <2-8> <repetitions>` / `drill beat none` | Set or disable the rhythm |
 | `drill polka\|waltz\|rock\|jazz\|jiga\|balkan\|samba <repetitions>` | Shorthand for a fixed loop size (see table above) |
-| `drill format simple\|full` | Set the output style (`full` is the default) |
+| `drill format simple\|full` | Set the output style (`simple` is the default) |
