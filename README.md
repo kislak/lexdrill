@@ -125,7 +125,9 @@ There are also named shortcuts for common loop sizes, one word/phrase apart:
 | 7         | `balkan` |
 | 8         | `samba`  |
 
-`drill waltz 16` is shorthand for `drill beat 3 16`.
+`drill waltz 16` is shorthand for `drill beat 3 16`. Repetitions default to
+`8` if you leave them off — `drill jazz` alone is `drill beat 5 8`, and
+`drill beat 4` alone is `drill beat 4 8`.
 
 ### Commands
 

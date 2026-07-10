@@ -32,6 +32,16 @@ RSpec.describe Lexdrill::Beat do
     end
   end
 
+  describe ".repetitions_or_default" do
+    it "parses the given value when present" do
+      expect(described_class.repetitions_or_default("16")).to eq(16)
+    end
+
+    it "defaults to 8 when nil" do
+      expect(described_class.repetitions_or_default(nil)).to eq(8)
+    end
+  end
+
   describe ".valid_loop_size?" do
     it "accepts 2 through 8" do
       (2..8).each { |n| expect(described_class.valid_loop_size?(n)).to be true }

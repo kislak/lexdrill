@@ -10,6 +10,7 @@ module Lexdrill::Beat
   PATH = File.join(Dir.home, ".drill.beat")
   MIN_LOOP_SIZE = 2
   MAX_LOOP_SIZE = 8
+  DEFAULT_REPETITIONS = 8
 
   ALIASES = {
     "polka" => 2,
@@ -35,6 +36,10 @@ module Lexdrill::Beat
 
   def self.valid_loop_size?(value)
     (MIN_LOOP_SIZE..MAX_LOOP_SIZE).cover?(value)
+  end
+
+  def self.repetitions_or_default(value)
+    value ? value.to_i : DEFAULT_REPETITIONS
   end
 
   def self.loop_size

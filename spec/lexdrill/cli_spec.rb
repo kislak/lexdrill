@@ -183,5 +183,27 @@ RSpec.describe Lexdrill::CLI do
         expect(Lexdrill::Beat.repetitions).to eq(16)
       end
     end
+
+    it "defaults repetitions to 8 for a bare alias (drill jazz == drill beat 5 8)" do
+      Dir.mktmpdir("lexdrill-cli-beat-alias-default-spec") do |dir|
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+
+        exit_code = described_class.new(["jazz"]).start
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::Beat.loop_size).to eq(5)
+        expect(Lexdrill::Beat.repetitions).to eq(8)
+      end
+    end
+
+    it "defaults repetitions to 8 for `drill beat <loop_size>` with no repetitions given" do
+      Dir.mktmpdir("lexdrill-cli-beat-default-spec") do |dir|
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+
+        exit_code = described_class.new(%w[beat 4]).start
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::Beat.loop_size).to eq(4)
+        expect(Lexdrill::Beat.repetitions).to eq(8)
+      end
+    end
   end
 end

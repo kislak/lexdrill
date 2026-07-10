@@ -50,9 +50,9 @@ class Lexdrill::CLI
         drill start     Resume drilling (undoes stop)
         drill stop      Pause drilling everywhere until `start`
         drill inspect   Show the active config/counter/toggle state
-        drill beat <2-8> <repetitions>   Set the rhythm (loop size + repeat count)
+        drill beat <2-8> [repetitions]   Set the rhythm (repetitions defaults to 8)
         drill beat none                 Disable the rhythm
-        drill polka|waltz|rock|jazz|jiga|balkan|samba <repetitions>
+        drill polka|waltz|rock|jazz|jiga|balkan|samba [repetitions]
                         Shorthand for a fixed loop size (2 through 8, in order)
     HELP
     0
@@ -111,11 +111,12 @@ class Lexdrill::CLI
     return print_beat_usage unless arg
     return clear_beat if arg == "none"
 
-    set_beat(arg.to_i, argv[2].to_i)
+    set_beat(arg.to_i, Lexdrill::Beat.repetitions_or_default(argv[2]))
   end
 
   def run_beat_alias
-    set_beat(Lexdrill::Beat::ALIASES.fetch(argv.first), argv[1].to_i)
+    loop_size = Lexdrill::Beat::ALIASES.fetch(argv.first)
+    set_beat(loop_size, Lexdrill::Beat.repetitions_or_default(argv[1]))
   end
 
   def set_beat(loop_size, repetitions)
