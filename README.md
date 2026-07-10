@@ -162,3 +162,6 @@ There are also named shortcuts for common loop sizes, one word/phrase apart:
 | `drill beat <2-8> <repetitions>` / `drill beat none` | Set or disable the rhythm |
 | `drill polka\|waltz\|rock\|jazz\|jiga\|balkan\|samba <repetitions>` | Shorthand for a fixed loop size (see table above) |
 | `drill format simple\|full` | Set the output style (`simple` is the default) |
+| `drill add <text>` | Append a new item to the end of the list |
+| `drill list` | Print all items in the list, numbered |
+| `drill open` | Open the list file in `$EDITOR`/`$VISUAL` (falls back to `vi`) |

@@ -257,5 +257,97 @@ RSpec.describe Lexdrill::CLI do
       expect { exit_code = described_class.new(%w[format bogus]).start }.to output(/usage/).to_stderr
       expect(exit_code).to eq(1)
     end
+
+    it "appends a new item to the end of the list" do
+      Dir.mktmpdir("lexdrill-cli-add-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(%w[add gamma delta]).start
+        end.to output(/added: gamma delta/).to_stdout
+        expect(exit_code).to eq(0)
+
+        lines = File.readlines(Lexdrill::WordList::PATH, encoding: "UTF-8").map(&:strip)
+        expect(lines).to eq(["alpha", "beta", "gamma delta"])
+      end
+    end
+
+    it "creates the list file if it doesn't exist yet" do
+      Dir.mktmpdir("lexdrill-cli-add-new-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+
+        exit_code = described_class.new(%w[add hello]).start
+        expect(exit_code).to eq(0)
+        expect(File.read(Lexdrill::WordList::PATH)).to eq("hello\n")
+      end
+    end
+
+    it "reports usage on stderr and returns 1 when add is given no text" do
+      exit_code = nil
+      expect { exit_code = described_class.new(["add"]).start }.to output(/usage/).to_stderr
+      expect(exit_code).to eq(1)
+    end
+
+    it "prints all items in the list, numbered" do
+      Dir.mktmpdir("lexdrill-cli-list-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
+
+        exit_code = nil
+        expect { exit_code = described_class.new(["list"]).start }.to output("1. alpha\n2. beta\n").to_stdout
+        expect(exit_code).to eq(0)
+      end
+    end
+
+    it "reports on stderr and returns 1 when the list is empty" do
+      Dir.mktmpdir("lexdrill-cli-list-empty-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "")
+
+        exit_code = nil
+        expect { exit_code = described_class.new(["list"]).start }.to output(/no words/).to_stderr
+        expect(exit_code).to eq(1)
+      end
+    end
+
+    it "opens the list file with $EDITOR and returns 0 on success" do
+      Dir.mktmpdir("lexdrill-cli-open-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        File.write(Lexdrill::WordList::PATH, "alpha\n")
+        original_editor = ENV.fetch("EDITOR", nil)
+
+        begin
+          ENV["EDITOR"] = "true"
+          exit_code = described_class.new(["open"]).start
+          expect(exit_code).to eq(0)
+        ensure
+          ENV["EDITOR"] = original_editor
+        end
+      end
+    end
+
+    it "returns 1 when the editor command fails" do
+      Dir.mktmpdir("lexdrill-cli-open-fail-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        File.write(Lexdrill::WordList::PATH, "alpha\n")
+        original_editor = ENV.fetch("EDITOR", nil)
+
+        begin
+          ENV["EDITOR"] = "false"
+          exit_code = described_class.new(["open"]).start
+          expect(exit_code).to eq(1)
+        ensure
+          ENV["EDITOR"] = original_editor
+        end
+      end
+    end
   end
 end

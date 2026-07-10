@@ -11,7 +11,10 @@ class Lexdrill::CLI
     run_inspect: %w[inspect],
     run_beat: %w[beat],
     run_beat_alias: %w[polka waltz rock jazz jiga balkan samba],
-    run_format: %w[format]
+    run_format: %w[format],
+    run_add: %w[add],
+    run_list: %w[list],
+    run_open: %w[open]
   }.freeze
 
   def self.start(argv = ARGV)
@@ -56,6 +59,9 @@ class Lexdrill::CLI
         drill polka|waltz|rock|jazz|jiga|balkan|samba [repetitions]
                         Shorthand for a fixed loop size (2 through 8, in order)
         drill format simple|full   Set the output style (simple is the default)
+        drill add <text>   Append a new item to the end of the list
+        drill list         Print all items in the list, numbered
+        drill open         Open the list file in $EDITOR/$VISUAL (falls back to vi)
     HELP
     0
   end
@@ -168,6 +174,33 @@ class Lexdrill::CLI
   def print_format_usage
     warn "usage: drill format <#{Lexdrill::Format::VALID.join('|')}>"
     1
+  end
+
+  def run_add
+    text = argv[1..].join(" ")
+    return print_add_usage if text.empty?
+
+    File.open(Lexdrill::WordList::PATH, "a", encoding: "UTF-8") { |file| file.puts(text) }
+    puts "added: #{text}"
+    0
+  end
+
+  def print_add_usage
+    warn "usage: drill add <text>"
+    1
+  end
+
+  def run_list
+    words = Lexdrill::WordList.words
+    return print_no_words(Lexdrill::WordList::PATH) if words.empty?
+
+    words.each_with_index { |word, index| puts "#{index + 1}. #{word}" }
+    0
+  end
+
+  def run_open
+    editor_cmd = (ENV["VISUAL"] || ENV["EDITOR"] || "vi").split
+    system(*editor_cmd, Lexdrill::WordList::PATH) ? 0 : 1
   end
 
   def print_unknown_command(command)

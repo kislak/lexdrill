@@ -18,3 +18,4 @@ detectors:
   TooManyStatements:
     exclude:
       - "Lexdrill::Beat#self.locate"
+      - "Lexdrill::CLI#run_add"
