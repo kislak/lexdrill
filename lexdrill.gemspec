@@ -6,12 +6,12 @@ Gem::Specification.new do |spec|
   spec.name = "lexdrill"
   spec.version = Lexdrill::VERSION
   spec.authors = ["Siarhei Kisliak"]
-  spec.email = ["siarhei.kisliak@airslate.com"]
+  spec.email = ["kislak7@gmail.com"]
 
   spec.summary = "Vocabulary drilling in your terminal."
   spec.description = "lexdrill prints a vocabulary word or phrase on demand, tracking how often " \
                      "each one has been shown."
-  spec.homepage = "https://github.com/skisliak/lexdrill"
+  spec.homepage = "https://github.com/kislak/lexdrill"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.0"
 
