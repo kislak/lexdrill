@@ -83,6 +83,16 @@ milestones, once the core is solid.
   processes, confirming the word advances on each simulated prompt and
   double-sourcing doesn't double-register.
 
+### 6. Global start/stop toggle
+- `Lexdrill::Toggle` is a marker file at `~/.drill.disabled`; enabled by
+  default, `lexdrill stop` creates it and `lexdrill start` removes it.
+- `next` checks it first and is a silent no-op (exit 0) while stopped —
+  pausing/resuming takes effect instantly in every open shell, no rc file
+  edits or restarts needed. Independent of whichever project's
+  `.drill.txt` is active (it's a global switch, not per-project).
+- **Verify:** unit tests + a manual run through stop → next (silent) →
+  start → next (resumes where the counter left off).
+
 ### Later milestones (not detailed yet)
 - Throttling and any spaced-repetition scheduling refinement.
 - Google Sheets–backed word list (the original vision), replacing/
@@ -95,4 +105,5 @@ milestones, once the core is solid.
 - [x] Milestone 3 — Local interaction store
 - [x] Milestone 4 — `lexdrill next` command
 - [x] Milestone 5 — Shell hook integration
+- [x] Milestone 6 — Global start/stop toggle
 - [x] Published to rubygems.org (`lexdrill` 0.2.0)
