@@ -6,5 +6,4 @@
 /coverage/
 .idea/
 .DS_Store
-/.drill.txt
-/.drill.counter
+/.drill*
