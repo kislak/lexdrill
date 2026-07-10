@@ -7,7 +7,8 @@ class Lexdrill::CLI
     run_next: %w[next],
     run_hook: %w[hook],
     run_start: %w[start],
-    run_stop: %w[stop]
+    run_stop: %w[stop],
+    run_inspect: %w[inspect]
   }.freeze
 
   def self.start(argv = ARGV)
@@ -46,6 +47,7 @@ class Lexdrill::CLI
         lexdrill hook <zsh|bash>   Print the shell integration snippet
         lexdrill start     Resume drilling (undoes stop)
         lexdrill stop      Pause drilling everywhere until `start`
+        lexdrill inspect   Show the active config/counter/toggle state
     HELP
     0
   end
@@ -90,6 +92,11 @@ class Lexdrill::CLI
 
   def run_stop
     Lexdrill::Toggle.stop
+    0
+  end
+
+  def run_inspect
+    puts Lexdrill::Inspector.report
     0
   end
 

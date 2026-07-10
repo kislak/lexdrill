@@ -101,5 +101,18 @@ RSpec.describe Lexdrill::CLI do
         expect(Lexdrill::Toggle.enabled?).to be true
       end
     end
+
+    it "prints the inspect report" do
+      Dir.mktmpdir("lexdrill-cli-inspect-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+
+        exit_code = nil
+        expect { exit_code = described_class.new(["inspect"]).start }.to output(/Words file:/).to_stdout
+        expect(exit_code).to eq(0)
+      end
+    end
   end
 end

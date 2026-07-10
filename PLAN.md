@@ -98,6 +98,17 @@ milestones, once the core is solid.
   even while stopped, while the zsh/bash hooks stay silent until
   `start`.
 
+### 7. `lexdrill inspect`
+- `Lexdrill::Inspector` reports the currently-active `.drill.txt`/
+  `.drill.counter` paths (and whether the words file actually exists,
+  and how many words it has), the live counter value, the toggle state
+  (enabled/stopped, with the marker path), and the `LEXDRILL_PATH` env
+  var if set.
+- Motivated directly by real confusion during development: it wasn't
+  obvious which installed version/paths were actually active. This
+  makes that state visible on demand instead of guessing.
+- **Verify:** unit tests + a manual run before/after `next`/`stop`.
+
 ### Later milestones (not detailed yet)
 - Throttling and any spaced-repetition scheduling refinement.
 - Google Sheets–backed word list (the original vision), replacing/
@@ -111,4 +122,5 @@ milestones, once the core is solid.
 - [x] Milestone 4 — `lexdrill next` command
 - [x] Milestone 5 — Shell hook integration
 - [x] Milestone 6 — Global start/stop toggle
-- [x] Published to rubygems.org (`lexdrill` 0.2.0)
+- [x] Milestone 7 — `lexdrill inspect`
+- [x] Published to rubygems.org (`lexdrill` 0.2.0, `0.3.0` pending)
