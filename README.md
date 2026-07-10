@@ -40,6 +40,10 @@ banana
 cherry
 ```
 
+If you don't create one, `drill next` seeds `~/.drill.txt` with a default
+starter list (a set of NLP presuppositions) the first time it runs, so
+there's always something to drill.
+
 Run `drill next` to print the current word and advance to the next one.
 There are two output styles (`drill format simple|full`, `simple` is the
 default):
