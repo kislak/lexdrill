@@ -34,29 +34,40 @@ milestones, once the core is solid.
 - **Verify:** `gem build` succeeds, `gem install --local` works end to end,
   `rake lint` is clean, `rake spec` runs (empty suite) green.
 
-### 2. Word list source (plain text file)
-- Reader for a simple `.txt` file: one word/phrase per line.
-- Configurable file path (env var), with a sensible default location.
-- Handles blank lines / surrounding whitespace sensibly.
-- **Verify:** unit tests covering parsing edge cases (blank lines,
-  whitespace, empty file).
+### 2. Word list source (`.drill.txt`)
+- `Lexdrill::WordList` reads one word/phrase per line from a `.drill.txt`
+  file.
+- Discovery: `.drill.txt` in the current directory takes precedence;
+  falls back to `$HOME/.drill.txt` if the current directory has none. This
+  lets a project directory carry its own list while still having a
+  personal default.
+- Handles blank lines / surrounding whitespace sensibly; missing/empty
+  file → empty list, never crashes.
+- **Verify:** unit tests covering discovery (cwd vs `$HOME`) and parsing
+  edge cases (blank lines, whitespace, empty file).
 
-### 3. Local interaction store (`~/.cache/lexdrill`)
-- A state file recording per-word interaction data: at minimum a view
-  counter and last-shown time.
-- File format **TBD** (JSON is the likely default, open to discussion).
-- Tolerant of a missing or corrupt state file — never crashes, self-heals.
-- **Verify:** unit tests for load/save round-trip and corruption recovery.
+### 3. Local interaction store (per-word-file counter)
+- `Lexdrill::Counter` reads/writes a single integer counter as a plain
+  text file — no JSON, matches the plain-text simplicity of the word list
+  itself.
+- Lives at `.drill.counter`, always a sibling of whichever `.drill.txt` was
+  found (cwd or `$HOME`) — the counter travels with its word list rather
+  than living in one global location.
+- Tolerant of a missing or non-numeric file (treated as `0`) — never
+  crashes, self-heals.
+- **Verify:** unit tests for read/write round-trip and corruption
+  recovery.
 
 ### 4. `lexdrill next` command
-- Combines the word list (milestone 2) and the interaction store
-  (milestone 3): picks the next word, prints it, increments its counter,
-  persists the update.
-- Selection strategy for this first pass **TBD** together (simplest
-  options: round-robin through the file, or least-recently/least-shown
-  first).
-- **Verify:** unit tests + a manual run showing the counter advancing
-  across repeated invocations.
+- `Lexdrill::WordList#next` combines the word list (milestone 2) and its
+  counter (milestone 3): the counter is a plain index into the list
+  (`counter % word_count`), so `next` always shows "the current word" and
+  then advances the counter by one.
+- Selection strategy: simple round-robin, wrapping back to the first word
+  once the list is exhausted (decided together — no least-recently-shown
+  logic for this first pass).
+- **Verify:** unit tests + a manual run showing the word advancing (and
+  wrapping) across repeated invocations.
 
 ### Later milestones (not detailed yet — revisit after milestone 4)
 - Shell hook integration (zsh/bash, fires before each prompt).
