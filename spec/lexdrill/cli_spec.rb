@@ -25,6 +25,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
         Lexdrill::Format.set("full")
@@ -44,6 +45,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
         Lexdrill::Format.set("simple")
@@ -63,6 +65,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "")
 
@@ -79,6 +82,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
         Lexdrill::Format.set("full")
@@ -140,6 +144,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
 
         exit_code = nil
@@ -347,6 +352,41 @@ RSpec.describe Lexdrill::CLI do
         ensure
           ENV["EDITOR"] = original_editor
         end
+      end
+    end
+
+    it "prints show counts for each item, numbered" do
+      Dir.mktmpdir("lexdrill-cli-stats-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
+        Lexdrill::WordList.next
+        Lexdrill::WordList.next
+        Lexdrill::WordList.next
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(["stats"]).start
+        end.to output("1. alpha (2)\n2. beta (1)\n").to_stdout
+        expect(exit_code).to eq(0)
+      end
+    end
+
+    it "reports on stderr and returns 1 when stats is run with no words" do
+      Dir.mktmpdir("lexdrill-cli-stats-empty-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "")
+
+        exit_code = nil
+        expect { exit_code = described_class.new(["stats"]).start }.to output(/no words/).to_stderr
+        expect(exit_code).to eq(1)
       end
     end
   end

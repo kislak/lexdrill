@@ -157,7 +157,7 @@ There are also named shortcuts for common loop sizes, one word/phrase apart:
 |---|---|
 | `drill next` | Print the current word and advance |
 | `drill start` / `drill stop` | Pause/resume the automatic per-prompt hook (doesn't affect manual `next`) |
-| `drill inspect` | Show the active `.drill.txt`/`.drill.counter` paths, word count, counter value, toggle, and beat state |
+| `drill inspect` | Show the active `.drill.txt`/`.drill.counter`/`.drill.stats` paths, word count, counter value, toggle, and beat state |
 | `drill hook zsh\|bash` | Print the shell integration snippet (used above) |
 | `drill beat <2-8> <repetitions>` / `drill beat none` | Set or disable the rhythm |
 | `drill polka\|waltz\|rock\|jazz\|jiga\|balkan\|samba <repetitions>` | Shorthand for a fixed loop size (see table above) |
@@ -165,3 +165,4 @@ There are also named shortcuts for common loop sizes, one word/phrase apart:
 | `drill add <text>` | Append a new item to the end of the list |
 | `drill list` | Print all items in the list, numbered |
 | `drill open` | Open the list file in `$EDITOR`/`$VISUAL` (falls back to `vi`) |
+| `drill stats` | Show how many times each item has been shown, numbered |

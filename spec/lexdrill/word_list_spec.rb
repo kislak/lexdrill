@@ -13,6 +13,7 @@ RSpec.describe Lexdrill::WordList do
     stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(@dir, ".drill.counter"))
     # Isolate from any real ~/.drill.beat so .next exercises plain (unconfigured) rhythm.
     stub_const("Lexdrill::Beat::PATH", File.join(@dir, ".drill.beat"))
+    stub_const("Lexdrill::Stats::PATH", File.join(@dir, ".drill.stats"))
     # .words memoizes into a class-level ivar; reset it so each example starts
     # fresh instead of seeing a previous example's cached word list.
     described_class.instance_variable_set(:@words, nil)
@@ -96,6 +97,15 @@ RSpec.describe Lexdrill::WordList do
       write_words("alpha\nbeta\n")
       5.times { described_class.next }
       expect(counter_value).to be <= 2
+    end
+
+    it "records a show in Stats for each word returned" do
+      write_words("alpha\nbeta\n")
+      described_class.next
+      described_class.next
+      described_class.next
+
+      expect(Lexdrill::Stats.counts).to eq("alpha" => 2, "beta" => 1)
     end
   end
 end

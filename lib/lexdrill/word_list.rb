@@ -25,7 +25,9 @@ class Lexdrill::WordList
   def self.next
     return nil if words.empty?
 
-    words[take_index(words.size)]
+    word = words[take_index(words.size)]
+    Lexdrill::Stats.record(word)
+    word
   end
 
   def self.take_index(size)

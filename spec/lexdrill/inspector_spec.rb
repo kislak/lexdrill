@@ -11,6 +11,7 @@ RSpec.describe Lexdrill::Inspector do
   before do
     stub_const("Lexdrill::WordList::PATH", File.join(@dir, ".drill.txt"))
     stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(@dir, ".drill.counter"))
+    stub_const("Lexdrill::Stats::PATH", File.join(@dir, ".drill.stats"))
     stub_const("Lexdrill::Toggle::PATH", File.join(@dir, ".drill.disabled"))
     Lexdrill::WordList.instance_variable_set(:@words, nil)
   end
@@ -23,6 +24,13 @@ RSpec.describe Lexdrill::Inspector do
       expect(report).to include("missing")
       expect(report).to include("value: 0")
       expect(report).to include("enabled")
+      expect(report).to include("no data yet")
+    end
+
+    it "reports the tracked item count once stats exist" do
+      Lexdrill::Stats.record("alpha")
+
+      expect(described_class.report).to include("1 item(s) tracked")
     end
 
     it "reports the word count once the words file exists" do

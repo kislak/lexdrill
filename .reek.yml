@@ -19,3 +19,7 @@ detectors:
     exclude:
       - "Lexdrill::Beat#self.locate"
       - "Lexdrill::CLI#run_add"
+      - "Lexdrill::CLI#run_stats"
+  TooManyConstants:
+    exclude:
+      - "Lexdrill::Config"

@@ -14,7 +14,8 @@ class Lexdrill::CLI
     run_format: %w[format],
     run_add: %w[add],
     run_list: %w[list],
-    run_open: %w[open]
+    run_open: %w[open],
+    run_stats: %w[stats]
   }.freeze
 
   def self.start(argv = ARGV)
@@ -62,6 +63,7 @@ class Lexdrill::CLI
         drill add <text>   Append a new item to the end of the list
         drill list         Print all items in the list, numbered
         drill open         Open the list file in $EDITOR/$VISUAL (falls back to vi)
+        drill stats        Show how many times each item has been shown
     HELP
     0
   end
@@ -201,6 +203,15 @@ class Lexdrill::CLI
   def run_open
     editor_cmd = (ENV["VISUAL"] || ENV["EDITOR"] || "vi").split
     system(*editor_cmd, Lexdrill::WordList::PATH) ? 0 : 1
+  end
+
+  def run_stats
+    words = Lexdrill::WordList.words
+    return print_no_words(Lexdrill::WordList::PATH) if words.empty?
+
+    counts = Lexdrill::Stats.counts
+    words.each_with_index { |word, index| puts "#{index + 1}. #{word} (#{counts.fetch(word, 0)})" }
+    0
   end
 
   def print_unknown_command(command)

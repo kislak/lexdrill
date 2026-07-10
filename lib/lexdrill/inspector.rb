@@ -10,6 +10,7 @@ module Lexdrill::Inspector
 
       Words file:    #{Lexdrill::WordList::PATH} (#{words_summary})
       Counter file:  #{Lexdrill::WordList::COUNTER_PATH} (value: #{counter_value})
+      Stats file:    #{Lexdrill::Stats::PATH} (#{stats_summary})
       Toggle:        #{toggle_summary}
       Beat:          #{beat_summary}
       Format:        #{Lexdrill::Format.current}
@@ -25,6 +26,12 @@ module Lexdrill::Inspector
 
   def self.counter_value
     Lexdrill::Counter.new(Lexdrill::WordList::COUNTER_PATH).value
+  end
+
+  def self.stats_summary
+    return "no data yet" unless File.exist?(Lexdrill::Stats::PATH)
+
+    "#{Lexdrill::Stats.counts.size} item(s) tracked"
   end
 
   def self.toggle_summary
