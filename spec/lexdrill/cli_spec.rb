@@ -36,6 +36,25 @@ RSpec.describe Lexdrill::CLI do
       end
     end
 
+    it "prints simple-mode output in blue (three drill signs, a newline, then the word)" do
+      Dir.mktmpdir("lexdrill-cli-next-simple-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
+        Lexdrill::Format.set("simple")
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(["next"]).start
+        end.to output("\e[34m⟳⟳⟳\nalpha\e[0m\n").to_stdout
+        expect(exit_code).to eq(0)
+      end
+    end
+
     it "reports on stderr and returns 1 when there are no words" do
       Dir.mktmpdir("lexdrill-cli-next-empty-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))

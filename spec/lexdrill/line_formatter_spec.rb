@@ -46,12 +46,12 @@ RSpec.describe Lexdrill::LineFormatter do
       )
     end
 
-    it "in simple mode, is just the bare word" do
+    it "in simple mode, is three drill signs, a newline, then the word" do
       File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
       Lexdrill::Format.set("simple")
       Lexdrill::WordList.next
 
-      expect(described_class.format("alpha")).to eq("alpha")
+      expect(described_class.format("alpha")).to eq("⟳⟳⟳\nalpha")
     end
   end
 end

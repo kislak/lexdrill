@@ -64,8 +64,15 @@ class Lexdrill::CLI
     word = Lexdrill::WordList.next
     return print_no_words(Lexdrill::WordList::PATH) unless word
 
-    puts Lexdrill::Colorizer.paint(Lexdrill::LineFormatter.format(word))
+    puts colored_line(word)
     0
+  end
+
+  def colored_line(word)
+    text = Lexdrill::LineFormatter.format(word)
+    return Lexdrill::Colorizer.paint_blue(text) if Lexdrill::Format.simple?
+
+    Lexdrill::Colorizer.paint(text)
   end
 
   def print_no_words(path)

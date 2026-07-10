@@ -11,6 +11,7 @@ detectors:
       - "Lexdrill::CLI#run_start"
       - "Lexdrill::CLI#run_stop"
       - "Lexdrill::CLI#clear_beat"
+      - "Lexdrill::CLI#colored_line"
   TooManyMethods:
     exclude:
       - "Lexdrill::CLI"
