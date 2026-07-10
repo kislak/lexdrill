@@ -44,10 +44,10 @@ Run `drill next` to print the current word and advance to the next one, in a
 randomly-picked color. There are two output styles (`drill format simple|full`,
 `full` is the default):
 
-**full** — `⟳counter/total/[loop_start-loop_end]` on one line, the word on
+**full** — `counter/total⟳[loop_start-loop_end]` on one line, the word on
 the next:
 ```
-⟳1/6/[1-3]
+1/6⟳[1-3]
 apple
 ```
 (word 1 of 6 total; currently in the loop spanning words 1-3)

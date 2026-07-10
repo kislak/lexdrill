@@ -31,7 +31,7 @@ RSpec.describe Lexdrill::CLI do
         exit_code = nil
         expect do
           exit_code = described_class.new(["next"]).start
-        end.to output(%r{\A\e\[\d+m⟳1/2/\[1-2\]\nalpha\e\[0m\n\z}).to_stdout
+        end.to output(%r{\A\e\[\d+m1/2⟳\[1-2\]\nalpha\e\[0m\n\z}).to_stdout
         expect(exit_code).to eq(0)
       end
     end
@@ -66,7 +66,7 @@ RSpec.describe Lexdrill::CLI do
         exit_code = nil
         expect do
           exit_code = described_class.new(["next"]).start
-        end.to output(%r{\A\e\[\d+m⟳1/2/\[1-2\]\nalpha\e\[0m\n\z}).to_stdout
+        end.to output(%r{\A\e\[\d+m1/2⟳\[1-2\]\nalpha\e\[0m\n\z}).to_stdout
         expect(exit_code).to eq(0)
       end
     end
