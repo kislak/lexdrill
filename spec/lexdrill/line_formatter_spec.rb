@@ -16,11 +16,11 @@ RSpec.describe Lexdrill::LineFormatter do
   end
 
   describe ".format" do
-    it "formats current/total:, a tab, then the word" do
+    it "formats current/total followed by the separator, a newline, then the word" do
       File.write(Lexdrill::WordList::PATH, "alpha\nbeta\ngamma\n")
       Lexdrill::WordList.next # advances the counter to 1
 
-      expect(described_class.format("alpha")).to eq("1/3:\talpha")
+      expect(described_class.format("alpha")).to eq("1/3⟳\nalpha")
     end
 
     it "shows the word's own position (not the raw beat step) when a beat is configured" do
@@ -35,7 +35,7 @@ RSpec.describe Lexdrill::LineFormatter do
         described_class.format(word)
       end
 
-      expect(lines).to eq(["1/6:\ta", "2/6:\tb", "3/6:\tc", "1/6:\ta"])
+      expect(lines).to eq(["1/6⟳\na", "2/6⟳\nb", "3/6⟳\nc", "1/6⟳\na"])
     end
   end
 end
