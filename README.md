@@ -48,14 +48,24 @@ before each prompt. This is a **one-time step** — the line stays in your rc fi
 and takes effect in every new shell session from then on; you never need to run it
 again by hand.
 
+Add it near the **end** of the file, after anything that sets up your `PATH`
+(rvm/rbenv init, Homebrew, etc.) — otherwise the shell may not know where
+`lexdrill` lives yet when this line runs. Guarding it with `command -v` also
+means it never errors, even on a machine/session where `lexdrill` isn't on
+`PATH` for some reason.
+
 **zsh** — add to `~/.zshrc`:
 ```zsh
-eval "$(lexdrill hook zsh)"
+if command -v lexdrill >/dev/null 2>&1; then
+  eval "$(lexdrill hook zsh)"
+fi
 ```
 
 **bash** — add to `~/.bashrc`:
 ```bash
-eval "$(lexdrill hook bash)"
+if command -v lexdrill >/dev/null 2>&1; then
+  eval "$(lexdrill hook bash)"
+fi
 ```
 
 Then open a new shell (or `source ~/.zshrc` / `source ~/.bashrc`) to pick it up.
