@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 # Builds a human-readable snapshot of lexdrill's current config/state, for
-# `lexdrill inspect` — which files are active, how many words, the counter
+# `drill inspect` — which files are active, how many words, the counter
 # value, and whether drilling is currently stopped.
 module Lexdrill::Inspector
   def self.report
     <<~REPORT
-      lexdrill #{Lexdrill::VERSION}
+      drill #{Lexdrill::VERSION}
 
       Words file:    #{Lexdrill::WordList::PATH} (#{words_summary})
       Counter file:  #{Lexdrill::WordList::COUNTER_PATH} (value: #{counter_value})

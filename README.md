@@ -1,6 +1,7 @@
 # lexdrill
 
-lexdrill prints a vocabulary word or phrase on demand, tracking how often each one has been shown.
+The `lexdrill` gem installs a `drill` command that prints a vocabulary word or
+phrase on demand, tracking how often each one has been shown.
 
 ## Installation
 
@@ -8,7 +9,7 @@ lexdrill prints a vocabulary word or phrase on demand, tracking how often each o
 gem install lexdrill
 ```
 
-### `lexdrill: command not found` after install?
+### `drill: command not found` after install?
 
 This happens when the gem's executable directory isn't on your `PATH` — common with a
 plain system Ruby (no rbenv/rvm). Fix it in one step:
@@ -39,7 +40,7 @@ banana
 cherry
 ```
 
-Run `lexdrill next` to print the current word and advance to the next one.
+Run `drill next` to print the current word and advance to the next one.
 
 ### Shell integration (one-time setup)
 
@@ -50,21 +51,21 @@ again by hand.
 
 Add it near the **end** of the file, after anything that sets up your `PATH`
 (rvm/rbenv init, Homebrew, etc.) — otherwise the shell may not know where
-`lexdrill` lives yet when this line runs. Guarding it with `command -v` also
-means it never errors, even on a machine/session where `lexdrill` isn't on
+`drill` lives yet when this line runs. Guarding it with `command -v` also
+means it never errors, even on a machine/session where `drill` isn't on
 `PATH` for some reason.
 
 **zsh** — add to `~/.zshrc`:
 ```zsh
-if command -v lexdrill >/dev/null 2>&1; then
-  eval "$(lexdrill hook zsh)"
+if command -v drill >/dev/null 2>&1; then
+  eval "$(drill hook zsh)"
 fi
 ```
 
 **bash** — add to `~/.bashrc`:
 ```bash
-if command -v lexdrill >/dev/null 2>&1; then
-  eval "$(lexdrill hook bash)"
+if command -v drill >/dev/null 2>&1; then
+  eval "$(drill hook bash)"
 fi
 ```
 
@@ -72,7 +73,7 @@ Then open a new shell (or `source ~/.zshrc` / `source ~/.bashrc`) to pick it up.
 
 #### Hook not firing in new terminal windows/tabs (rvm users)?
 
-Run `lexdrill inspect` first — if it shows `Toggle: enabled` and a valid words
+Run `drill inspect` first — if it shows `Toggle: enabled` and a valid words
 file, the tool itself is fine and the problem is that the hook function never
 got registered in that session.
 
@@ -82,10 +83,10 @@ PATH-loading line (`[[ -s "$HOME/.rvm/scripts/rvm" ]] && source
 Those files only run for **login shells** — but many terminal emulators
 (e.g. kitty) open new windows/tabs as **non-login** interactive shells, which
 only source `~/.zshrc`/`~/.bashrc`. So rvm's gemset `bin/` directory (where
-`lexdrill` lives) never makes it onto `PATH` in those sessions, even though
+`drill` lives) never makes it onto `PATH` in those sessions, even though
 everything looks correctly configured.
 
-**Fix:** move that line into `~/.zshrc` / `~/.bashrc` (before the `lexdrill`
+**Fix:** move that line into `~/.zshrc` / `~/.bashrc` (before the `drill`
 hook block above, so it runs first) instead of relying on it only being in
 `~/.zlogin` / `~/.bash_profile`. It's safe to leave it in both places.
 
@@ -93,7 +94,7 @@ hook block above, so it runs first) instead of relying on it only being in
 
 | Command | What it does |
 |---|---|
-| `lexdrill next` | Print the current word and advance |
-| `lexdrill start` / `lexdrill stop` | Pause/resume the automatic per-prompt hook (doesn't affect manual `next`) |
-| `lexdrill inspect` | Show the active `.drill.txt`/`.drill.counter` paths, word count, counter value, and toggle state |
-| `lexdrill hook zsh\|bash` | Print the shell integration snippet (used above) |
+| `drill next` | Print the current word and advance |
+| `drill start` / `drill stop` | Pause/resume the automatic per-prompt hook (doesn't affect manual `next`) |
+| `drill inspect` | Show the active `.drill.txt`/`.drill.counter` paths, word count, counter value, and toggle state |
+| `drill hook zsh\|bash` | Print the shell integration snippet (used above) |

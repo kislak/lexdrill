@@ -62,11 +62,11 @@ RSpec.describe Lexdrill::CLI do
     end
 
     it "prints the zsh hook snippet" do
-      expect { described_class.new(%w[hook zsh]).start }.to output(/lexdrill_precmd/).to_stdout
+      expect { described_class.new(%w[hook zsh]).start }.to output(/drill_precmd/).to_stdout
     end
 
     it "prints the bash hook snippet" do
-      expect { described_class.new(%w[hook bash]).start }.to output(/lexdrill_precmd/).to_stdout
+      expect { described_class.new(%w[hook bash]).start }.to output(/drill_precmd/).to_stdout
     end
 
     it "reports usage on stderr and returns 1 when hook is given no shell" do

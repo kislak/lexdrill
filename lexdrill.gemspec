@@ -23,6 +23,6 @@ Gem::Specification.new do |spec|
     Dir["lib/**/*.rb"] + Dir["bin/*"] + %w[README.md LICENSE.txt lexdrill.gemspec Gemfile]
   end
   spec.bindir = "bin"
-  spec.executables = ["lexdrill"]
+  spec.executables = ["drill"]
   spec.require_paths = ["lib"]
 end

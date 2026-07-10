@@ -38,16 +38,16 @@ class Lexdrill::CLI
 
   def print_help
     puts <<~HELP
-      lexdrill #{Lexdrill::VERSION} — vocabulary drilling in your terminal
+      drill #{Lexdrill::VERSION} — vocabulary drilling in your terminal
 
       Usage:
-        lexdrill version   Print the gem version
-        lexdrill help      Show this help
-        lexdrill next      Print the current word and advance
-        lexdrill hook <zsh|bash>   Print the shell integration snippet
-        lexdrill start     Resume drilling (undoes stop)
-        lexdrill stop      Pause drilling everywhere until `start`
-        lexdrill inspect   Show the active config/counter/toggle state
+        drill version   Print the gem version
+        drill help      Show this help
+        drill next      Print the current word and advance
+        drill hook <zsh|bash>   Print the shell integration snippet
+        drill start     Resume drilling (undoes stop)
+        drill stop      Pause drilling everywhere until `start`
+        drill inspect   Show the active config/counter/toggle state
     HELP
     0
   end
@@ -61,7 +61,7 @@ class Lexdrill::CLI
   end
 
   def print_no_words(path)
-    warn "lexdrill: no words found in #{path}"
+    warn "drill: no words found in #{path}"
     1
   end
 
@@ -73,7 +73,7 @@ class Lexdrill::CLI
   end
 
   def print_hook_usage
-    warn "usage: lexdrill hook <zsh|bash>"
+    warn "usage: drill hook <zsh|bash>"
     1
   end
 
@@ -81,7 +81,7 @@ class Lexdrill::CLI
     puts Lexdrill::ShellSnippet.for(shell)
     0
   rescue ArgumentError => error
-    warn "lexdrill: #{error.message}"
+    warn "drill: #{error.message}"
     1
   end
 
@@ -101,7 +101,7 @@ class Lexdrill::CLI
   end
 
   def print_unknown_command(command)
-    warn "lexdrill: unknown command #{command.inspect}"
+    warn "drill: unknown command #{command.inspect}"
     print_help
     1
   end
