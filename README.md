@@ -70,6 +70,25 @@ fi
 
 Then open a new shell (or `source ~/.zshrc` / `source ~/.bashrc`) to pick it up.
 
+#### Hook not firing in new terminal windows/tabs (rvm users)?
+
+Run `lexdrill inspect` first — if it shows `Toggle: enabled` and a valid words
+file, the tool itself is fine and the problem is that the hook function never
+got registered in that session.
+
+A common cause with rvm: rvm's installer sometimes puts its actual
+PATH-loading line (`[[ -s "$HOME/.rvm/scripts/rvm" ]] && source
+"$HOME/.rvm/scripts/rvm"`) in `~/.zlogin` (zsh) or `~/.bash_profile` (bash).
+Those files only run for **login shells** — but many terminal emulators
+(e.g. kitty) open new windows/tabs as **non-login** interactive shells, which
+only source `~/.zshrc`/`~/.bashrc`. So rvm's gemset `bin/` directory (where
+`lexdrill` lives) never makes it onto `PATH` in those sessions, even though
+everything looks correctly configured.
+
+**Fix:** move that line into `~/.zshrc` / `~/.bashrc` (before the `lexdrill`
+hook block above, so it runs first) instead of relying on it only being in
+`~/.zlogin` / `~/.bash_profile`. It's safe to leave it in both places.
+
 ### Commands
 
 | Command | What it does |
