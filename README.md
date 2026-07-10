@@ -41,13 +41,14 @@ cherry
 ```
 
 Run `drill next` to print the current word and advance to the next one. Each
-line is printed as `{position}/{total}: word` in a randomly-picked color, e.g.:
+line is printed as `current:total` followed by a tab and the word, in a
+randomly-picked color, e.g.:
 
 ```
-1/3: apple
-2/3: banana
-3/3: cherry
-1/3: apple
+1:3	apple
+2:3	banana
+3:3	cherry
+1:3	apple
 ```
 
 ### Shell integration (one-time setup)

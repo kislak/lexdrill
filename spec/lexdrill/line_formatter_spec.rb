@@ -15,11 +15,11 @@ RSpec.describe Lexdrill::LineFormatter do
   end
 
   describe ".format" do
-    it "formats the line number (the just-advanced counter value) over the total word count" do
+    it "formats current:total, a tab, then the word" do
       File.write(Lexdrill::WordList::PATH, "alpha\nbeta\ngamma\n")
       Lexdrill::WordList.next # advances the counter to 1
 
-      expect(described_class.format("alpha")).to eq("1/3: alpha")
+      expect(described_class.format("alpha")).to eq("1:3\talpha")
     end
   end
 end
