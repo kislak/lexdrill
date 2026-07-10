@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 # Formats a shown word for display. In "simple" mode, just the word. In
-# "full" mode (the default): "{counter}/{total}/[{loop_start}-{loop_end}]
-# {loop_number}/{total_loops}#{SEPARATOR}\n{word}" — counter is the word's
-# own 1-based position in the list, re-derived through Lexdrill::Beat so it
-# stays meaningful even when a rhythm repeats steps.
+# "full" mode (the default): "{SEPARATOR}{counter}/{total}/[{loop_start}-
+# {loop_end}]\n{word}" — counter is the word's own 1-based position in the
+# list, re-derived through Lexdrill::Beat so it stays meaningful even when a
+# rhythm repeats steps.
 module Lexdrill::LineFormatter
   SEPARATOR = "⟳"
 
@@ -17,8 +17,7 @@ module Lexdrill::LineFormatter
   def self.full(word)
     total = Lexdrill::WordList.words.size
     info = loop_info(total)
-    "#{info.index + 1}/#{total}/[#{info.chunk_start}-#{info.chunk_end}]" \
-      "#{info.loop_number}/#{info.total_loops}#{SEPARATOR}\n#{word}"
+    "#{SEPARATOR}#{info.index + 1}/#{total}/[#{info.chunk_start}-#{info.chunk_end}]\n#{word}"
   end
 
   def self.loop_info(total)

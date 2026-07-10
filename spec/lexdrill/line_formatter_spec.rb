@@ -17,14 +17,14 @@ RSpec.describe Lexdrill::LineFormatter do
   end
 
   describe ".format" do
-    it "in full mode (the default), formats counter/total/[chunk]loop/total_loops, a newline, the word" do
+    it "in full mode (the default), formats the drill sign, counter/total/[chunk], a newline, the word" do
       File.write(Lexdrill::WordList::PATH, "alpha\nbeta\ngamma\n")
       Lexdrill::WordList.next # advances the counter to 1
 
-      expect(described_class.format("alpha")).to eq("1/3/[1-3]1/1⟳\nalpha")
+      expect(described_class.format("alpha")).to eq("⟳1/3/[1-3]\nalpha")
     end
 
-    it "shows the word's own position and current loop pass when a beat is configured" do
+    it "shows the word's own position and current loop range when a beat is configured" do
       File.write(Lexdrill::WordList::PATH, "a\nb\nc\nd\ne\nf\n")
       Lexdrill::Beat.set(3, 2) # loop of 3, repeated 2x: a,b,c,a,b,c,d,e,f,d,e,f
 
@@ -38,10 +38,10 @@ RSpec.describe Lexdrill::LineFormatter do
 
       expect(lines).to eq(
         [
-          "1/6/[1-3]1/2⟳\na",
-          "2/6/[1-3]1/2⟳\nb",
-          "3/6/[1-3]1/2⟳\nc",
-          "1/6/[1-3]2/2⟳\na"
+          "⟳1/6/[1-3]\na",
+          "⟳2/6/[1-3]\nb",
+          "⟳3/6/[1-3]\nc",
+          "⟳1/6/[1-3]\na"
         ]
       )
     end
