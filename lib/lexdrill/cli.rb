@@ -70,7 +70,7 @@ class Lexdrill::CLI
 
   def colored_line(word)
     text = Lexdrill::LineFormatter.format(word)
-    return Lexdrill::Colorizer.paint_blue(text) if Lexdrill::Format.simple?
+    return text if Lexdrill::Format.simple?
 
     Lexdrill::Colorizer.paint(text)
   end
