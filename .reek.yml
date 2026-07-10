@@ -6,3 +6,7 @@ exclude_paths:
 detectors:
   IrresponsibleModule:
     enabled: false
+  UtilityFunction:
+    exclude:
+      - "Lexdrill::CLI#run_start"
+      - "Lexdrill::CLI#run_stop"

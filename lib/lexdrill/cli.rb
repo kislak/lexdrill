@@ -5,7 +5,9 @@ class Lexdrill::CLI
     print_version: %w[version --version -v],
     print_help: %w[help --help -h],
     run_next: %w[next],
-    run_hook: %w[hook]
+    run_hook: %w[hook],
+    run_start: %w[start],
+    run_stop: %w[stop]
   }.freeze
 
   def self.start(argv = ARGV)
@@ -42,11 +44,15 @@ class Lexdrill::CLI
         lexdrill help      Show this help
         lexdrill next      Print the current word and advance
         lexdrill hook <zsh|bash>   Print the shell integration snippet
+        lexdrill start     Resume drilling (undoes stop)
+        lexdrill stop      Pause drilling everywhere until `start`
     HELP
     0
   end
 
   def run_next
+    return 0 unless Lexdrill::Toggle.enabled?
+
     word = Lexdrill::WordList.next
     return print_no_words(Lexdrill::WordList::PATH) unless word
 
@@ -77,6 +83,16 @@ class Lexdrill::CLI
   rescue ArgumentError => error
     warn "lexdrill: #{error.message}"
     1
+  end
+
+  def run_start
+    Lexdrill::Toggle.start
+    0
+  end
+
+  def run_stop
+    Lexdrill::Toggle.stop
+    0
   end
 
   def print_unknown_command(command)

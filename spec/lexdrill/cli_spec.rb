@@ -22,6 +22,7 @@ RSpec.describe Lexdrill::CLI do
       Dir.mktmpdir("lexdrill-cli-next-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
 
@@ -35,12 +36,28 @@ RSpec.describe Lexdrill::CLI do
       Dir.mktmpdir("lexdrill-cli-next-empty-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "")
 
         exit_code = nil
         expect { exit_code = described_class.new(["next"]).start }.to output(/no words/).to_stderr
         expect(exit_code).to eq(1)
+      end
+    end
+
+    it "prints nothing and returns 0 for next while stopped" do
+      Dir.mktmpdir("lexdrill-cli-next-stopped-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
+        Lexdrill::Toggle.stop
+
+        exit_code = nil
+        expect { exit_code = described_class.new(["next"]).start }.to output("").to_stdout
+        expect(exit_code).to eq(0)
       end
     end
 
@@ -62,6 +79,27 @@ RSpec.describe Lexdrill::CLI do
       exit_code = nil
       expect { exit_code = described_class.new(%w[hook fish]).start }.to output(/fish/).to_stderr
       expect(exit_code).to eq(1)
+    end
+
+    it "stops drilling" do
+      Dir.mktmpdir("lexdrill-cli-stop-spec") do |dir|
+        stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
+
+        exit_code = described_class.new(["stop"]).start
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::Toggle.enabled?).to be false
+      end
+    end
+
+    it "starts drilling again after a stop" do
+      Dir.mktmpdir("lexdrill-cli-start-spec") do |dir|
+        stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
+        Lexdrill::Toggle.stop
+
+        exit_code = described_class.new(["start"]).start
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::Toggle.enabled?).to be true
+      end
     end
   end
 end

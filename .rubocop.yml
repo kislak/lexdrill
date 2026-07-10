@@ -18,6 +18,11 @@ Style/ClassAndModuleChildren:
 Naming/RescuedExceptionsVariableName:
   PreferredName: error
 
+Metrics/MethodLength:
+  Max: 12
+  Exclude:
+    - "spec/**/*"
+
 Metrics/BlockLength:
   Exclude:
     - "spec/**/*"
