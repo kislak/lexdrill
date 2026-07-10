@@ -13,6 +13,7 @@ module Lexdrill::Inspector
       Stats file:    #{Lexdrill::Stats::PATH} (#{stats_summary})
       Toggle:        #{toggle_summary}
       Beat:          #{beat_summary}
+      Rand:          #{rand_summary}
       Format:        #{Lexdrill::Format.current}
       LEXDRILL_PATH: #{ENV.fetch('LEXDRILL_PATH', '(not set)')}
     REPORT
@@ -21,7 +22,12 @@ module Lexdrill::Inspector
   def self.words_summary
     return "missing" unless File.exist?(Lexdrill::WordList::PATH)
 
-    "#{Lexdrill::WordList.words.size} word(s)"
+    words = Lexdrill::WordList.words
+    total = words.size
+    graduated = words.count { |word| Lexdrill::Stats.graduated?(word) }
+    return "#{total} word(s)" if graduated.zero?
+
+    "#{total} word(s), #{graduated} graduated"
   end
 
   def self.counter_value
@@ -41,8 +47,16 @@ module Lexdrill::Inspector
   end
 
   def self.beat_summary
+    return "random (ignores rhythm/counter)" if Lexdrill::Beat.rand?
     return "not set (plain word-by-word)" unless Lexdrill::Beat.configured?
 
     "loop #{Lexdrill::Beat.loop_size}, repeat #{Lexdrill::Beat.repetitions}"
+  end
+
+  def self.rand_summary
+    denominator = Lexdrill::Rand.value
+    return "every time (default)" if denominator == 1
+
+    "approximately 1-in-#{denominator}"
   end
 end

@@ -48,15 +48,14 @@ RSpec.describe Lexdrill::LineFormatter do
       )
     end
 
-    it "in simple mode (the default), is the blue drill sign, a space, then the word in a random color, on one line" do
+    it "in simple mode (the default), is the blue sign, a space, then the word colored by its show count" do
+      stub_const("Lexdrill::Stats::PATH", File.join(@dir, ".drill.stats"))
       File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
-      Lexdrill::WordList.next
+      Lexdrill::WordList.next # records one show of "alpha"
 
       result = described_class.format("alpha")
-      expect(result).to match(/\A\e\[34m⟳\e\[0m \e\[\d+malpha\e\[0m\z/)
-
-      word_code = result.match(/ \e\[(\d+)malpha/)[1].to_i
-      expect(Lexdrill::Colorizer::CODES).to include(word_code)
+      expected_word = Lexdrill::Colorizer.paint_by_count("alpha", 1)
+      expect(result).to eq("#{Lexdrill::Colorizer.paint_blue('⟳')} #{expected_word}")
     end
   end
 end

@@ -13,6 +13,8 @@ RSpec.describe Lexdrill::Inspector do
     stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(@dir, ".drill.counter"))
     stub_const("Lexdrill::Stats::PATH", File.join(@dir, ".drill.stats"))
     stub_const("Lexdrill::Toggle::PATH", File.join(@dir, ".drill.disabled"))
+    stub_const("Lexdrill::Rand::PATH", File.join(@dir, ".drill.rand"))
+    stub_const("Lexdrill::Beat::PATH", File.join(@dir, ".drill.beat"))
     Lexdrill::WordList.instance_variable_set(:@words, nil)
   end
 
@@ -25,6 +27,13 @@ RSpec.describe Lexdrill::Inspector do
       expect(report).to include("value: 0")
       expect(report).to include("enabled")
       expect(report).to include("no data yet")
+      expect(report).to include("every time (default)")
+    end
+
+    it "reports the approximate frequency once rand is configured" do
+      Lexdrill::Rand.set(10)
+
+      expect(described_class.report).to include("approximately 1-in-10")
     end
 
     it "reports the tracked item count once stats exist" do
@@ -51,6 +60,12 @@ RSpec.describe Lexdrill::Inspector do
       report = described_class.report
       expect(report).to include("stopped")
       expect(report).to include(Lexdrill::Toggle::PATH)
+    end
+
+    it "reports the beat as random when beat rand is set" do
+      Lexdrill::Beat.set_rand
+
+      expect(described_class.report).to include("random (ignores rhythm/counter)")
     end
 
     it "reports LEXDRILL_PATH when set" do

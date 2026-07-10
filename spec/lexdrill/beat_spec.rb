@@ -24,6 +24,31 @@ RSpec.describe Lexdrill::Beat do
     end
   end
 
+  describe ".rand?" do
+    it "is false until .set_rand is called" do
+      expect(described_class.rand?).to be false
+    end
+
+    it "is true after .set_rand, and false again after .clear" do
+      described_class.set_rand
+      expect(described_class.rand?).to be true
+
+      described_class.clear
+      expect(described_class.rand?).to be false
+    end
+
+    it "makes .configured? false, even though the file exists" do
+      described_class.set_rand
+      expect(described_class.configured?).to be false
+    end
+
+    it "is unaffected by a numeric .set" do
+      described_class.set(3, 2)
+      expect(described_class.rand?).to be false
+      expect(described_class.configured?).to be true
+    end
+  end
+
   describe ".loop_size and .repetitions" do
     it "round-trip the persisted values" do
       described_class.set(4, 5)

@@ -26,6 +26,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
         Lexdrill::Format.set("full")
@@ -33,12 +34,12 @@ RSpec.describe Lexdrill::CLI do
         exit_code = nil
         expect do
           exit_code = described_class.new(["next"]).start
-        end.to output(%r{\A\e\[\d+m1/2⟳\[1-2\]\nalpha\e\[0m\n\z}).to_stdout
+        end.to output(%r{\A\e\[[\d;]+m1/2⟳\[1-2\]\nalpha\e\[0m\n\z}).to_stdout
         expect(exit_code).to eq(0)
       end
     end
 
-    it "prints simple-mode output as the blue drill sign, a space, then the word in a random color" do
+    it "prints simple-mode output as the blue drill sign, a space, then the word colored by its show count" do
       Dir.mktmpdir("lexdrill-cli-next-simple-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
@@ -46,6 +47,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
         Lexdrill::Format.set("simple")
@@ -53,7 +55,7 @@ RSpec.describe Lexdrill::CLI do
         exit_code = nil
         expect do
           exit_code = described_class.new(["next"]).start
-        end.to output(/\A\e\[34m⟳\e\[0m \e\[\d+malpha\e\[0m\n\z/).to_stdout
+        end.to output(/\A\e\[34m⟳\e\[0m \e\[[\d;]+malpha\e\[0m\n\z/).to_stdout
         expect(exit_code).to eq(0)
       end
     end
@@ -66,11 +68,32 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "")
 
         exit_code = nil
         expect { exit_code = described_class.new(["next"]).start }.to output(/no words/).to_stderr
+        expect(exit_code).to eq(1)
+      end
+    end
+
+    it "reports on stderr and returns 1 once every word has graduated" do
+      Dir.mktmpdir("lexdrill-cli-next-graduated-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\n")
+        File.write(Lexdrill::WordList::COUNTER_PATH, "0")
+        File.write(Lexdrill::Stats::PATH, JSON.generate("alpha" => Lexdrill::Stats::GRADUATION_THRESHOLD))
+
+        exit_code = nil
+        expect { exit_code = described_class.new(["next"]).start }.to output(/nothing left to drill/).to_stderr
         expect(exit_code).to eq(1)
       end
     end
@@ -83,6 +106,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
         Lexdrill::Format.set("full")
@@ -91,7 +115,7 @@ RSpec.describe Lexdrill::CLI do
         exit_code = nil
         expect do
           exit_code = described_class.new(["next"]).start
-        end.to output(%r{\A\e\[\d+m1/2⟳\[1-2\]\nalpha\e\[0m\n\z}).to_stdout
+        end.to output(%r{\A\e\[[\d;]+m1/2⟳\[1-2\]\nalpha\e\[0m\n\z}).to_stdout
         expect(exit_code).to eq(0)
       end
     end
@@ -145,6 +169,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
 
         exit_code = nil
@@ -171,6 +196,17 @@ RSpec.describe Lexdrill::CLI do
 
         exit_code = described_class.new(%w[beat none]).start
         expect(exit_code).to eq(0)
+        expect(Lexdrill::Beat.configured?).to be false
+      end
+    end
+
+    it "sets beat rand with `beat rand`" do
+      Dir.mktmpdir("lexdrill-cli-beat-rand-spec") do |dir|
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+
+        exit_code = described_class.new(%w[beat rand]).start
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::Beat.rand?).to be true
         expect(Lexdrill::Beat.configured?).to be false
       end
     end
@@ -295,16 +331,42 @@ RSpec.describe Lexdrill::CLI do
       expect(exit_code).to eq(1)
     end
 
-    it "prints all items in the list, numbered" do
+    it "prints each item as count<TAB>phrase" do
       Dir.mktmpdir("lexdrill-cli-list-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
+        Lexdrill::WordList.next
+        Lexdrill::WordList.next
+        Lexdrill::WordList.next
 
         exit_code = nil
-        expect { exit_code = described_class.new(["list"]).start }.to output("1. alpha\n2. beta\n").to_stdout
+        expect do
+          exit_code = described_class.new(["list"]).start
+        end.to output("2\talpha\n1\tbeta\n").to_stdout
+        expect(exit_code).to eq(0)
+      end
+    end
+
+    it "sorts items by show count, highest first, regardless of list file order" do
+      Dir.mktmpdir("lexdrill-cli-list-sort-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "gamma\nbeta\nalpha\n")
+        3.times { Lexdrill::Stats.record("alpha") }
+        2.times { Lexdrill::Stats.record("beta") }
+        Lexdrill::Stats.record("gamma")
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(["list"]).start
+        end.to output("3\talpha\n2\tbeta\n1\tgamma\n").to_stdout
         expect(exit_code).to eq(0)
       end
     end
@@ -361,6 +423,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
         Lexdrill::WordList.next
@@ -381,12 +444,72 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "")
 
         exit_code = nil
         expect { exit_code = described_class.new(["stats"]).start }.to output(/no words/).to_stderr
         expect(exit_code).to eq(1)
+      end
+    end
+
+    it "sets the rand denominator" do
+      Dir.mktmpdir("lexdrill-cli-rand-spec") do |dir|
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
+
+        exit_code = described_class.new(%w[rand 10]).start
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::Rand.value).to eq(10)
+      end
+    end
+
+    it "reports usage on stderr and returns 1 when rand is given no argument" do
+      exit_code = nil
+      expect { exit_code = described_class.new(["rand"]).start }.to output(/usage/).to_stderr
+      expect(exit_code).to eq(1)
+    end
+
+    it "reports usage on stderr and returns 1 for a non-positive rand value" do
+      exit_code = nil
+      expect { exit_code = described_class.new(%w[rand 0]).start }.to output(/usage/).to_stderr
+      expect(exit_code).to eq(1)
+    end
+
+    it "next silently no-ops (prints nothing, exits 0) when rand skips the show" do
+      Dir.mktmpdir("lexdrill-cli-next-rand-skip-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\n")
+        Lexdrill::Rand.set(5)
+        allow(Kernel).to receive(:rand).with(5).and_return(3)
+
+        exit_code = nil
+        expect { exit_code = described_class.new(["next"]).start }.to_not output.to_stdout
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::Counter.new(Lexdrill::WordList::COUNTER_PATH).value).to eq(0)
+      end
+    end
+
+    it "next still shows normally (manual call) when the random draw lands on zero" do
+      Dir.mktmpdir("lexdrill-cli-next-rand-show-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\n")
+        Lexdrill::Rand.set(5)
+        allow(Kernel).to receive(:rand).with(5).and_return(0)
+
+        exit_code = nil
+        expect { exit_code = described_class.new(["next"]).start }.to output(/alpha/).to_stdout
+        expect(exit_code).to eq(0)
       end
     end
   end

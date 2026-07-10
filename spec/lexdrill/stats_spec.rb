@@ -43,4 +43,20 @@ RSpec.describe Lexdrill::Stats do
       expect(JSON.parse(File.read(@path))).to eq("alpha" => 1)
     end
   end
+
+  describe ".graduated?" do
+    it "is false for a word with no recorded shows" do
+      expect(described_class.graduated?("alpha")).to be false
+    end
+
+    it "is false just below the graduation threshold" do
+      File.write(@path, JSON.generate("alpha" => described_class::GRADUATION_THRESHOLD - 1))
+      expect(described_class.graduated?("alpha")).to be false
+    end
+
+    it "is true at or beyond the graduation threshold" do
+      File.write(@path, JSON.generate("alpha" => described_class::GRADUATION_THRESHOLD))
+      expect(described_class.graduated?("alpha")).to be true
+    end
+  end
 end

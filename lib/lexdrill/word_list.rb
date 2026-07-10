@@ -3,7 +3,9 @@
 # Reads vocabulary words/phrases from a `.drill.txt` file, one per line, and
 # advances a persisted counter to show "the current word" each time. On a
 # fresh install with no project-local or LEXDRILL_PATH-overridden list, seeds
-# ~/.drill.txt with a default starter list instead of coming up empty.
+# ~/.drill.txt with a default starter list instead of coming up empty. Words
+# that have graduated (see Lexdrill::Stats) are excluded from `.next` but
+# remain in `.words` for `list`/`stats` to report.
 class Lexdrill::WordList
   PATH = Lexdrill::Config::DRILL_PATH
   COUNTER_PATH = Lexdrill::Config::COUNTER_PATH
@@ -23,11 +25,16 @@ class Lexdrill::WordList
   private_class_method :seed_default_at_home
 
   def self.next
-    return nil if words.empty?
+    active = active_words
+    return nil if active.empty?
 
-    word = words[take_index(words.size)]
+    word = Lexdrill::Beat.rand? ? active.sample : active[take_index(active.size)]
     Lexdrill::Stats.record(word)
     word
+  end
+
+  def self.active_words
+    words.reject { |word| Lexdrill::Stats.graduated?(word) }
   end
 
   def self.take_index(size)

@@ -107,5 +107,37 @@ RSpec.describe Lexdrill::WordList do
 
       expect(Lexdrill::Stats.counts).to eq("alpha" => 2, "beta" => 1)
     end
+
+    it "excludes graduated words from selection" do
+      write_words("alpha\nbeta\n")
+      File.write(Lexdrill::Stats::PATH, JSON.generate("alpha" => Lexdrill::Stats::GRADUATION_THRESHOLD))
+
+      5.times { expect(described_class.next).to eq("beta") }
+    end
+
+    it "returns nil once every word has graduated" do
+      write_words("alpha\nbeta\n")
+      graduated = { "alpha" => Lexdrill::Stats::GRADUATION_THRESHOLD, "beta" => Lexdrill::Stats::GRADUATION_THRESHOLD }
+      File.write(Lexdrill::Stats::PATH, JSON.generate(graduated))
+
+      expect(described_class.next).to be_nil
+    end
+
+    it "ignores the counter/rhythm and only picks from the active words when beat rand is set" do
+      write_words("alpha\nbeta\ngamma\n")
+      Lexdrill::Beat.set_rand
+
+      picks = Array.new(30) { described_class.next }
+      expect(picks.uniq.sort).to eq(%w[alpha beta gamma])
+      expect(counter_value).to eq(0)
+    end
+
+    it "still excludes graduated words when beat rand is set" do
+      write_words("alpha\nbeta\n")
+      Lexdrill::Beat.set_rand
+      File.write(Lexdrill::Stats::PATH, JSON.generate("alpha" => Lexdrill::Stats::GRADUATION_THRESHOLD))
+
+      10.times { expect(described_class.next).to eq("beta") }
+    end
   end
 end

@@ -48,14 +48,14 @@ Run `drill next` to print the current word and advance to the next one.
 There are two output styles (`drill format simple|full`, `simple` is the
 default):
 
-**simple** — the drill sign (always blue), a space, then the word (in a
-separately-picked random color), all on one line:
+**simple** — the drill sign (always blue), a space, then the word (colored
+by its show count — see "Mastery" below), all on one line:
 ```
 ⟳ apple
 ```
 
 **full** — `counter/total⟳[loop_start-loop_end]` on one line, the word on
-the next, in a randomly-picked color:
+the next, colored by the word's show count:
 ```
 1/6⟳[1-3]
 apple
@@ -151,18 +151,48 @@ There are also named shortcuts for common loop sizes, one word/phrase apart:
 `8` if you leave them off — `drill jazz` alone is `drill beat 5 8`, and
 `drill beat 4` alone is `drill beat 4 8`.
 
+### Frequency (`rand`)
+
+`next` fires on every single prompt by default via the shell hook, which can
+feel noisy in a busy session. `drill rand <n>` makes it actually show a word
+only approximately 1-in-`n` times instead:
+
+```bash
+drill rand 10   # roughly one in every ten calls
+drill rand 1    # back to every time (the default)
+```
+
+This is a **global** setting applied inside `drill next` itself — unlike
+`start`/`stop`, it affects *every* call, hook-triggered or manually typed.
+On a "skip", `next` silently does nothing (no output, nothing advances) and
+exits 0.
+
+### Mastery (color by show count)
+
+Every time `next` shows a word it's tracked in `.drill.stats` (see
+[`drill stats`](#commands) below). On an **odd** show count, the word's
+color follows a blue → red gradient, one step per 100 shows — so at a
+glance, blue words are fresh and red words are heavily drilled. On an
+**even** show count, it's a vivid random color instead, just for visual
+variety. Once a word hits 1200 shows it's considered mastered and `next`
+stops selecting it (it still appears in `drill list`/`drill stats`, just no
+longer comes up automatically). If every word in the list has been
+mastered, `next` reports that on stderr and exits 1 instead of showing
+anything.
+
 ### Commands
 
 | Command | What it does |
 |---|---|
 | `drill next` | Print the current word and advance |
 | `drill start` / `drill stop` | Pause/resume the automatic per-prompt hook (doesn't affect manual `next`) |
-| `drill inspect` | Show the active `.drill.txt`/`.drill.counter`/`.drill.stats` paths, word count, counter value, toggle, and beat state |
+| `drill inspect` | Show the active `.drill.txt`/`.drill.counter`/`.drill.stats` paths, word count, counter value, toggle, beat, and rand state |
 | `drill hook zsh\|bash` | Print the shell integration snippet (used above) |
 | `drill beat <2-8> <repetitions>` / `drill beat none` | Set or disable the rhythm |
 | `drill polka\|waltz\|rock\|jazz\|jiga\|balkan\|samba <repetitions>` | Shorthand for a fixed loop size (see table above) |
 | `drill format simple\|full` | Set the output style (`simple` is the default) |
 | `drill add <text>` | Append a new item to the end of the list |
-| `drill list` | Print all items in the list, numbered |
+| `drill list` | Print all items as `<count>\t<phrase>` (tab-separated), sorted by show count, highest first |
 | `drill open` | Open the list file in `$EDITOR`/`$VISUAL` (falls back to `vi`) |
 | `drill stats` | Show how many times each item has been shown, numbered |
+| `drill rand <n>` | Shell hook shows a word ~1-in-`n` times (`n=1` is every time, the default) |

@@ -12,6 +12,7 @@ detectors:
       - "Lexdrill::CLI#run_stop"
       - "Lexdrill::CLI#clear_beat"
       - "Lexdrill::CLI#colored_line"
+      - "Lexdrill::CLI#set_rand_beat"
   TooManyMethods:
     exclude:
       - "Lexdrill::CLI"
@@ -19,7 +20,12 @@ detectors:
     exclude:
       - "Lexdrill::Beat#self.locate"
       - "Lexdrill::CLI#run_add"
+      - "Lexdrill::CLI#run_list"
       - "Lexdrill::CLI#run_stats"
+      - "Lexdrill::Colorizer#self.gradient_code"
+      - "Lexdrill::Inspector#self.words_summary"
+      - "Lexdrill::WordList#self.next"
   TooManyConstants:
     exclude:
       - "Lexdrill::Config"
+      - "Lexdrill::Beat"

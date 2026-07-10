@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 # Formats a shown word for display. In "simple" mode: the drill sign (in
-# blue), a space, then the word (in a separately-picked random color), all
-# on one line. In "full" mode (the default):
+# blue), a space, then the word (colored by its show count, blue -> red as
+# it's drilled more), all on one line. In "full" mode (the default):
 # "{counter}/{total}{SEPARATOR}[{loop_start}-{loop_end}]\n{word}" — counter
 # is the word's own 1-based position in the list, re-derived through
 # Lexdrill::Beat so it stays meaningful even when a rhythm repeats steps.
@@ -16,7 +16,8 @@ module Lexdrill::LineFormatter
   end
 
   def self.simple(word)
-    "#{Lexdrill::Colorizer.paint_blue(SEPARATOR)} #{Lexdrill::Colorizer.paint(word)}"
+    count = Lexdrill::Stats.counts.fetch(word, 0)
+    "#{Lexdrill::Colorizer.paint_blue(SEPARATOR)} #{Lexdrill::Colorizer.paint_by_count(word, count)}"
   end
 
   def self.full(word)

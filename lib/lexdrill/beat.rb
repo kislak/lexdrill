@@ -6,11 +6,15 @@ require "fileutils"
 # `repetitions` times before advancing to the next loop. Lives at
 # ~/.drill.beat, independent of whichever project's .drill.txt is active.
 # Disabled (plain word-by-word advance) unless explicitly configured.
+# `drill beat rand` selects a third mode (marked by the literal contents
+# "rand") where WordList.next ignores the counter/rhythm entirely and picks
+# a uniformly random word each time instead.
 module Lexdrill::Beat
   PATH = File.join(Dir.home, ".drill.beat")
   MIN_LOOP_SIZE = 2
   MAX_LOOP_SIZE = 8
   DEFAULT_REPETITIONS = 8
+  RAND_MARKER = "rand"
 
   ALIASES = {
     "polka" => 2,
@@ -28,11 +32,19 @@ module Lexdrill::Beat
   LoopInfo = Struct.new(:index, :chunk_start, :chunk_end, :loop_number, :total_loops, keyword_init: true)
 
   def self.configured?
-    File.exist?(PATH)
+    File.exist?(PATH) && !rand?
+  end
+
+  def self.rand?
+    File.exist?(PATH) && File.read(PATH).strip == RAND_MARKER
   end
 
   def self.set(loop_size, repetitions)
     File.write(PATH, "#{loop_size} #{repetitions}")
+  end
+
+  def self.set_rand
+    File.write(PATH, RAND_MARKER)
   end
 
   def self.clear

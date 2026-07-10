@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 # Generates the zsh/bash shell integration snippet for `drill hook`.
+# Show-frequency throttling (`drill rand <n>`) lives entirely in `drill
+# next` itself, not in these snippets, so it applies equally to
+# hook-triggered and manually-run calls.
 module Lexdrill::ShellSnippet
   ZSH = <<~SNIPPET
     drill_precmd() {
