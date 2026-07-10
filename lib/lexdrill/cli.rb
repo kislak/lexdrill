@@ -10,7 +10,8 @@ class Lexdrill::CLI
     run_stop: %w[stop],
     run_inspect: %w[inspect],
     run_beat: %w[beat],
-    run_beat_alias: %w[polka waltz rock jazz jiga balkan samba]
+    run_beat_alias: %w[polka waltz rock jazz jiga balkan samba],
+    run_format: %w[format]
   }.freeze
 
   def self.start(argv = ARGV)
@@ -54,6 +55,7 @@ class Lexdrill::CLI
         drill beat none                 Disable the rhythm
         drill polka|waltz|rock|jazz|jiga|balkan|samba [repetitions]
                         Shorthand for a fixed loop size (2 through 8, in order)
+        drill format simple|full   Set the output style (full is the default)
     HELP
     0
   end
@@ -145,6 +147,19 @@ class Lexdrill::CLI
 
   def print_invalid_repetitions
     warn "drill: repetitions must be a positive number"
+    1
+  end
+
+  def run_format
+    mode = argv[1]
+    return print_format_usage unless Lexdrill::Format::VALID.include?(mode)
+
+    Lexdrill::Format.set(mode)
+    0
+  end
+
+  def print_format_usage
+    warn "usage: drill format <#{Lexdrill::Format::VALID.join('|')}>"
     1
   end
 

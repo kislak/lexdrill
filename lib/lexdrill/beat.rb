@@ -22,6 +22,11 @@ module Lexdrill::Beat
     "samba" => 8
   }.freeze
 
+  # index: 0-based word index. chunk_start/chunk_end: 1-based word positions
+  # spanned by the current loop. loop_number: which repeat pass (1-based)
+  # through the current loop. total_loops: the configured repetitions.
+  LoopInfo = Struct.new(:index, :chunk_start, :chunk_end, :loop_number, :total_loops, keyword_init: true)
+
   def self.configured?
     File.exist?(PATH)
   end
@@ -60,23 +65,43 @@ module Lexdrill::Beat
 
   # Maps a step (already bounded within cycle_length) to a word index.
   def self.index_for(word_count, step)
-    return step unless configured?
-
-    locate(chunk_sizes(word_count), step)
+    loop_info(word_count, step).index
   end
 
-  def self.locate(sizes, step)
+  # Full detail on where `step` falls: word index, the current loop's word
+  # range, which repeat pass it is, and how many total. A single "loop"
+  # spanning the whole list (shown once) when no beat is configured.
+  def self.loop_info(word_count, step)
+    unless configured?
+      return LoopInfo.new(index: step, chunk_start: 1, chunk_end: word_count, loop_number: 1, total_loops: 1)
+    end
+
+    locate(word_count, step)
+  end
+
+  def self.locate(word_count, step)
     offset = 0
-    sizes.each do |size|
+    chunk_sizes(word_count).each do |size|
       span = size * repetitions
-      return offset + (step % size) if step < span
+      return locate_within(offset, size, step) if step < span
 
       step -= span
       offset += size
     end
-    0
+    LoopInfo.new(index: 0, chunk_start: 1, chunk_end: word_count, loop_number: 1, total_loops: 1)
   end
   private_class_method :locate
+
+  def self.locate_within(offset, size, step)
+    LoopInfo.new(
+      index: offset + (step % size),
+      chunk_start: offset + 1,
+      chunk_end: offset + size,
+      loop_number: (step / size) + 1,
+      total_loops: repetitions
+    )
+  end
+  private_class_method :locate_within
 
   def self.settings
     return [nil, nil] unless configured?

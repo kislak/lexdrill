@@ -24,13 +24,14 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
 
         exit_code = nil
         expect do
           exit_code = described_class.new(["next"]).start
-        end.to output(%r{\A\e\[\d+m1/2⟳\nalpha\e\[0m\n\z}).to_stdout
+        end.to output(%r{\A\e\[\d+m1/2/\[1-2\]1/1⟳\nalpha\e\[0m\n\z}).to_stdout
         expect(exit_code).to eq(0)
       end
     end
@@ -41,6 +42,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "")
 
@@ -56,6 +58,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
         Lexdrill::Toggle.stop
@@ -63,7 +66,7 @@ RSpec.describe Lexdrill::CLI do
         exit_code = nil
         expect do
           exit_code = described_class.new(["next"]).start
-        end.to output(%r{\A\e\[\d+m1/2⟳\nalpha\e\[0m\n\z}).to_stdout
+        end.to output(%r{\A\e\[\d+m1/2/\[1-2\]1/1⟳\nalpha\e\[0m\n\z}).to_stdout
         expect(exit_code).to eq(0)
       end
     end
@@ -115,6 +118,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
 
         exit_code = nil
@@ -204,6 +208,33 @@ RSpec.describe Lexdrill::CLI do
         expect(Lexdrill::Beat.loop_size).to eq(4)
         expect(Lexdrill::Beat.repetitions).to eq(8)
       end
+    end
+
+    it "sets the format to simple" do
+      Dir.mktmpdir("lexdrill-cli-format-simple-spec") do |dir|
+        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
+
+        exit_code = described_class.new(%w[format simple]).start
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::Format.current).to eq("simple")
+      end
+    end
+
+    it "sets the format back to full" do
+      Dir.mktmpdir("lexdrill-cli-format-full-spec") do |dir|
+        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
+        Lexdrill::Format.set("simple")
+
+        exit_code = described_class.new(%w[format full]).start
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::Format.current).to eq("full")
+      end
+    end
+
+    it "reports usage on stderr and returns 1 for an invalid format" do
+      exit_code = nil
+      expect { exit_code = described_class.new(%w[format bogus]).start }.to output(/usage/).to_stderr
+      expect(exit_code).to eq(1)
     end
   end
 end

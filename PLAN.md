@@ -129,6 +129,18 @@ milestones, once the core is solid.
   short final chunk) + a manual run showing the exact repeat pattern
   and disabling it.
 
+### 9. Output style (`format`)
+- `Lexdrill::Format` is a global config (`~/.drill.format`, defaulting to
+  `"full"`) with two modes: `drill format simple` (just the bare word)
+  and `drill format full` (the richer, default display).
+- Full mode shows `counter/total/[loop_start-loop_end]loop_number/
+  total_loops⟳` on one line, the word on the next — `Beat.loop_info`
+  now returns a `LoopInfo` struct (index, chunk_start, chunk_end,
+  loop_number, total_loops) so `LineFormatter` can build this without
+  duplicating `Beat`'s chunk-walking logic.
+- **Verify:** unit tests for both modes (with and without a beat
+  configured) + a manual run comparing full vs. simple output.
+
 ### Later milestones (not detailed yet)
 - Throttling and any spaced-repetition scheduling refinement.
 - Google Sheets–backed word list (the original vision), replacing/
@@ -144,4 +156,5 @@ milestones, once the core is solid.
 - [x] Milestone 6 — Global start/stop toggle
 - [x] Milestone 7 — `lexdrill inspect`
 - [x] Milestone 8 — Rhythm (`beat`)
+- [x] Milestone 9 — Output style (`format`)
 - [x] Published to rubygems.org (`lexdrill` 0.2.0, `0.3.0` pending)

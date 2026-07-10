@@ -12,6 +12,7 @@ module Lexdrill::Inspector
       Counter file:  #{Lexdrill::WordList::COUNTER_PATH} (value: #{counter_value})
       Toggle:        #{toggle_summary}
       Beat:          #{beat_summary}
+      Format:        #{Lexdrill::Format.current}
       LEXDRILL_PATH: #{ENV.fetch('LEXDRILL_PATH', '(not set)')}
     REPORT
   end

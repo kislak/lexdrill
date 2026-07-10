@@ -91,4 +91,37 @@ RSpec.describe Lexdrill::Beat do
       expect(steps.map { |step| described_class.index_for(7, step) }).to eq([6, 6])
     end
   end
+
+  describe ".loop_info" do
+    it "spans the whole list as a single one-pass loop when not configured" do
+      info = described_class.loop_info(6, 4)
+      expect(info.index).to eq(4)
+      expect(info.chunk_start).to eq(1)
+      expect(info.chunk_end).to eq(6)
+      expect(info.loop_number).to eq(1)
+      expect(info.total_loops).to eq(1)
+    end
+
+    it "reports the current chunk's range and which repeat pass it's on" do
+      described_class.set(3, 2)
+      # 6 words, chunks [1-3] and [4-6], each shown 2x
+
+      first_pass = described_class.loop_info(6, 1) # step 1 -> index 1 (b), first pass
+      expect(first_pass.chunk_start).to eq(1)
+      expect(first_pass.chunk_end).to eq(3)
+      expect(first_pass.loop_number).to eq(1)
+      expect(first_pass.total_loops).to eq(2)
+
+      second_pass = described_class.loop_info(6, 4) # step 4 -> index 1 (b), second pass
+      expect(second_pass.chunk_start).to eq(1)
+      expect(second_pass.chunk_end).to eq(3)
+      expect(second_pass.loop_number).to eq(2)
+      expect(second_pass.total_loops).to eq(2)
+
+      next_chunk = described_class.loop_info(6, 6) # step 6 -> index 3 (d), first pass of chunk 2
+      expect(next_chunk.chunk_start).to eq(4)
+      expect(next_chunk.chunk_end).to eq(6)
+      expect(next_chunk.loop_number).to eq(1)
+    end
+  end
 end

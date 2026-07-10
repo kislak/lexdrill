@@ -40,12 +40,21 @@ banana
 cherry
 ```
 
-Run `drill next` to print the current word and advance to the next one. It
-prints `current/total⟳` on one line and the word on the next, in a
-randomly-picked color, e.g.:
+Run `drill next` to print the current word and advance to the next one, in a
+randomly-picked color. There are two output styles (`drill format simple|full`,
+`full` is the default):
 
+**full** — `counter/total/[loop_start-loop_end]loop_number/total_loops⟳` on
+one line, the word on the next:
 ```
-1/3⟳
+1/6/[1-3]1/2⟳
+apple
+```
+(word 1 of 6 total; currently in the loop spanning words 1-3; on pass 1 of 2
+through that loop)
+
+**simple** — just the word:
+```
 apple
 ```
 
@@ -137,3 +146,4 @@ There are also named shortcuts for common loop sizes, one word/phrase apart:
 | `drill hook zsh\|bash` | Print the shell integration snippet (used above) |
 | `drill beat <2-8> <repetitions>` / `drill beat none` | Set or disable the rhythm |
 | `drill polka\|waltz\|rock\|jazz\|jiga\|balkan\|samba <repetitions>` | Shorthand for a fixed loop size (see table above) |
+| `drill format simple\|full` | Set the output style (`full` is the default) |
