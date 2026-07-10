@@ -52,11 +52,10 @@ apple
 ```
 (word 1 of 6 total; currently in the loop spanning words 1-3)
 
-**simple** — three drill signs (always blue), then the word on its own
-line in a separately-picked random color:
+**simple** — the drill sign (always blue), a space, then the word (in a
+separately-picked random color), all on one line:
 ```
-⟳⟳⟳
-apple
+⟳ apple
 ```
 
 ### Shell integration (one-time setup)
