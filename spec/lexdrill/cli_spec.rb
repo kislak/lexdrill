@@ -27,7 +27,9 @@ RSpec.describe Lexdrill::CLI do
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
 
         exit_code = nil
-        expect { exit_code = described_class.new(["next"]).start }.to output("alpha\n").to_stdout
+        expect do
+          exit_code = described_class.new(["next"]).start
+        end.to output(%r{\A\e\[\d+m1/2: alpha\e\[0m\n\z}).to_stdout
         expect(exit_code).to eq(0)
       end
     end
@@ -56,7 +58,9 @@ RSpec.describe Lexdrill::CLI do
         Lexdrill::Toggle.stop
 
         exit_code = nil
-        expect { exit_code = described_class.new(["next"]).start }.to output("alpha\n").to_stdout
+        expect do
+          exit_code = described_class.new(["next"]).start
+        end.to output(%r{\A\e\[\d+m1/2: alpha\e\[0m\n\z}).to_stdout
         expect(exit_code).to eq(0)
       end
     end

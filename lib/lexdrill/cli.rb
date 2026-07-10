@@ -56,7 +56,7 @@ class Lexdrill::CLI
     word = Lexdrill::WordList.next
     return print_no_words(Lexdrill::WordList::PATH) unless word
 
-    puts word
+    puts Lexdrill::Colorizer.paint(Lexdrill::LineFormatter.format(word))
     0
   end
 
