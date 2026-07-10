@@ -51,8 +51,6 @@ class Lexdrill::CLI
   end
 
   def run_next
-    return 0 unless Lexdrill::Toggle.enabled?
-
     word = Lexdrill::WordList.next
     return print_no_words(Lexdrill::WordList::PATH) unless word
 

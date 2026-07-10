@@ -4,6 +4,7 @@
 module Lexdrill::ShellSnippet
   ZSH = <<~SNIPPET
     lexdrill_precmd() {
+      [[ -f "$HOME/.drill.disabled" ]] && return
       command lexdrill next 2>/dev/null
     }
     if [[ -z "${precmd_functions[(r)lexdrill_precmd]}" ]]; then
@@ -13,6 +14,7 @@ module Lexdrill::ShellSnippet
 
   BASH = <<~SNIPPET
     lexdrill_precmd() {
+      [ -f "$HOME/.drill.disabled" ] && return
       command lexdrill next 2>/dev/null
     }
     case ";${PROMPT_COMMAND:-};" in

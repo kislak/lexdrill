@@ -46,7 +46,7 @@ RSpec.describe Lexdrill::CLI do
       end
     end
 
-    it "prints nothing and returns 0 for next while stopped" do
+    it "still prints the current word when stopped (stop only gates the shell hook, not `next` itself)" do
       Dir.mktmpdir("lexdrill-cli-next-stopped-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
@@ -56,7 +56,7 @@ RSpec.describe Lexdrill::CLI do
         Lexdrill::Toggle.stop
 
         exit_code = nil
-        expect { exit_code = described_class.new(["next"]).start }.to output("").to_stdout
+        expect { exit_code = described_class.new(["next"]).start }.to output("alpha\n").to_stdout
         expect(exit_code).to eq(0)
       end
     end

@@ -86,12 +86,17 @@ milestones, once the core is solid.
 ### 6. Global start/stop toggle
 - `Lexdrill::Toggle` is a marker file at `~/.drill.disabled`; enabled by
   default, `lexdrill stop` creates it and `lexdrill start` removes it.
-- `next` checks it first and is a silent no-op (exit 0) while stopped —
-  pausing/resuming takes effect instantly in every open shell, no rc file
-  edits or restarts needed. Independent of whichever project's
-  `.drill.txt` is active (it's a global switch, not per-project).
-- **Verify:** unit tests + a manual run through stop → next (silent) →
-  start → next (resumes where the counter left off).
+- The toggle only gates the **shell hook** (the generated zsh/bash
+  snippet checks for the marker file before ever calling
+  `command lexdrill next`) — not the `next` command itself, since a
+  hook-triggered call and a manual `lexdrill next` are indistinguishable
+  to the Ruby code. So `lexdrill next` always works when run directly;
+  `stop`/`start` only control whether the *automatic* per-prompt calls
+  happen. Independent of whichever project's `.drill.txt` is active
+  (it's a global switch, not per-project).
+- **Verify:** unit tests + a manual run confirming manual `next` prints
+  even while stopped, while the zsh/bash hooks stay silent until
+  `start`.
 
 ### Later milestones (not detailed yet)
 - Throttling and any spaced-repetition scheduling refinement.
