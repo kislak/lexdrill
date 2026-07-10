@@ -15,9 +15,6 @@ Style/Documentation:
 Style/ClassAndModuleChildren:
   EnforcedStyle: compact
 
-Gemspec/RequireMFA:
-  Enabled: false
-
 Metrics/BlockLength:
   Exclude:
     - "spec/**/*"
