@@ -99,11 +99,41 @@ everything looks correctly configured.
 hook block above, so it runs first) instead of relying on it only being in
 `~/.zlogin` / `~/.bash_profile`. It's safe to leave it in both places.
 
+### Rhythm (`beat`)
+
+By default `next` just advances one word at a time. You can instead have it
+repeat loops of consecutive words — e.g. a loop of 3 words shown twice each
+before moving on:
+
+```bash
+drill beat 3 2     # loop size 3, repeat each loop 2 times
+```
+
+`drill beat none` turns it back off (plain word-by-word again). This is a
+**global** setting — it applies everywhere, independent of which project's
+`.drill.txt` is currently active.
+
+There are also named shortcuts for common loop sizes, one word/phrase apart:
+
+| Loop size | Alias    |
+|-----------|----------|
+| 2         | `polka`  |
+| 3         | `waltz`  |
+| 4         | `rock`   |
+| 5         | `jazz`   |
+| 6         | `jiga`   |
+| 7         | `balkan` |
+| 8         | `samba`  |
+
+`drill waltz 16` is shorthand for `drill beat 3 16`.
+
 ### Commands
 
 | Command | What it does |
 |---|---|
 | `drill next` | Print the current word and advance |
 | `drill start` / `drill stop` | Pause/resume the automatic per-prompt hook (doesn't affect manual `next`) |
-| `drill inspect` | Show the active `.drill.txt`/`.drill.counter` paths, word count, counter value, and toggle state |
+| `drill inspect` | Show the active `.drill.txt`/`.drill.counter` paths, word count, counter value, toggle, and beat state |
 | `drill hook zsh\|bash` | Print the shell integration snippet (used above) |
+| `drill beat <2-8> <repetitions>` / `drill beat none` | Set or disable the rhythm |
+| `drill polka\|waltz\|rock\|jazz\|jiga\|balkan\|samba <repetitions>` | Shorthand for a fixed loop size (see table above) |

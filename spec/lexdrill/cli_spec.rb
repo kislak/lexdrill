@@ -23,6 +23,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
 
@@ -39,6 +40,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "")
 
@@ -53,6 +55,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
         Lexdrill::Toggle.stop
@@ -111,11 +114,73 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
 
         exit_code = nil
         expect { exit_code = described_class.new(["inspect"]).start }.to output(/Words file:/).to_stdout
         expect(exit_code).to eq(0)
+      end
+    end
+
+    it "sets the beat" do
+      Dir.mktmpdir("lexdrill-cli-beat-spec") do |dir|
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+
+        exit_code = described_class.new(%w[beat 3 2]).start
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::Beat.loop_size).to eq(3)
+        expect(Lexdrill::Beat.repetitions).to eq(2)
+      end
+    end
+
+    it "clears the beat with `beat none`" do
+      Dir.mktmpdir("lexdrill-cli-beat-none-spec") do |dir|
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        Lexdrill::Beat.set(3, 2)
+
+        exit_code = described_class.new(%w[beat none]).start
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::Beat.configured?).to be false
+      end
+    end
+
+    it "reports usage on stderr and returns 1 when beat is given no args" do
+      exit_code = nil
+      expect { exit_code = described_class.new(["beat"]).start }.to output(/usage/).to_stderr
+      expect(exit_code).to eq(1)
+    end
+
+    it "rejects a loop size outside 2..8" do
+      Dir.mktmpdir("lexdrill-cli-beat-invalid-spec") do |dir|
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+
+        exit_code = nil
+        expect { exit_code = described_class.new(%w[beat 1 2]).start }.to output(/loop size/).to_stderr
+        expect(exit_code).to eq(1)
+        expect(Lexdrill::Beat.configured?).to be false
+      end
+    end
+
+    it "rejects non-positive repetitions" do
+      Dir.mktmpdir("lexdrill-cli-beat-invalid-reps-spec") do |dir|
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+
+        exit_code = nil
+        expect { exit_code = described_class.new(%w[beat 3 0]).start }.to output(/repetitions/).to_stderr
+        expect(exit_code).to eq(1)
+        expect(Lexdrill::Beat.configured?).to be false
+      end
+    end
+
+    it "sets the beat via the waltz alias (loop size 3)" do
+      Dir.mktmpdir("lexdrill-cli-beat-alias-spec") do |dir|
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+
+        exit_code = described_class.new(%w[waltz 16]).start
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::Beat.loop_size).to eq(3)
+        expect(Lexdrill::Beat.repetitions).to eq(16)
       end
     end
   end

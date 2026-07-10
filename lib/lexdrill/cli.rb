@@ -8,7 +8,9 @@ class Lexdrill::CLI
     run_hook: %w[hook],
     run_start: %w[start],
     run_stop: %w[stop],
-    run_inspect: %w[inspect]
+    run_inspect: %w[inspect],
+    run_beat: %w[beat],
+    run_beat_alias: %w[polka waltz rock jazz jiga balkan samba]
   }.freeze
 
   def self.start(argv = ARGV)
@@ -48,6 +50,10 @@ class Lexdrill::CLI
         drill start     Resume drilling (undoes stop)
         drill stop      Pause drilling everywhere until `start`
         drill inspect   Show the active config/counter/toggle state
+        drill beat <2-8> <repetitions>   Set the rhythm (loop size + repeat count)
+        drill beat none                 Disable the rhythm
+        drill polka|waltz|rock|jazz|jiga|balkan|samba <repetitions>
+                        Shorthand for a fixed loop size (2 through 8, in order)
     HELP
     0
   end
@@ -98,6 +104,47 @@ class Lexdrill::CLI
   def run_inspect
     puts Lexdrill::Inspector.report
     0
+  end
+
+  def run_beat
+    arg = argv[1]
+    return print_beat_usage unless arg
+    return clear_beat if arg == "none"
+
+    set_beat(arg.to_i, argv[2].to_i)
+  end
+
+  def run_beat_alias
+    set_beat(Lexdrill::Beat::ALIASES.fetch(argv.first), argv[1].to_i)
+  end
+
+  def set_beat(loop_size, repetitions)
+    return print_invalid_loop_size unless Lexdrill::Beat.valid_loop_size?(loop_size)
+    return print_invalid_repetitions unless repetitions.positive?
+
+    Lexdrill::Beat.set(loop_size, repetitions)
+    0
+  end
+
+  def clear_beat
+    Lexdrill::Beat.clear
+    0
+  end
+
+  def print_beat_usage
+    warn "usage: drill beat <#{Lexdrill::Beat::MIN_LOOP_SIZE}-#{Lexdrill::Beat::MAX_LOOP_SIZE}> " \
+         "<repetitions> | drill beat none"
+    1
+  end
+
+  def print_invalid_loop_size
+    warn "drill: loop size must be between #{Lexdrill::Beat::MIN_LOOP_SIZE} and #{Lexdrill::Beat::MAX_LOOP_SIZE}"
+    1
+  end
+
+  def print_invalid_repetitions
+    warn "drill: repetitions must be a positive number"
+    1
   end
 
   def print_unknown_command(command)

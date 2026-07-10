@@ -109,6 +109,26 @@ milestones, once the core is solid.
   makes that state visible on demand instead of guessing.
 - **Verify:** unit tests + a manual run before/after `next`/`stop`.
 
+### 8. Rhythm (`beat`)
+- `Lexdrill::Beat` is a global config (`~/.drill.beat`, independent of
+  which project's `.drill.txt` is active) storing a loop size (2-8) and
+  a repetition count.
+- `drill beat <loop_size> <repetitions>` sets it; `drill beat none`
+  disables it (back to plain word-by-word). Named aliases
+  (`polka`=2, `waltz`=3, `rock`=4, `jazz`=5, `jiga`=6, `balkan`=7,
+  `samba`=8) are shorthand: `drill waltz 16` == `drill beat 3 16`.
+- When configured, `WordList.next` partitions the word list into
+  chunks of `loop_size` (the last chunk may be shorter) and repeats
+  each chunk `repetitions` times before advancing — derived purely
+  from the existing persisted counter (now interpreted as a step
+  within the rhythm's cycle length) via `Beat.cycle_length`/
+  `.index_for`, no new counter state needed. `LineFormatter` re-derives
+  the word's own list position through `Beat.index_for` too, so the
+  displayed `current/total` stays meaningful under a repeating rhythm.
+- **Verify:** unit tests for the chunking/indexing math (including a
+  short final chunk) + a manual run showing the exact repeat pattern
+  and disabling it.
+
 ### Later milestones (not detailed yet)
 - Throttling and any spaced-repetition scheduling refinement.
 - Google Sheets–backed word list (the original vision), replacing/
@@ -123,4 +143,5 @@ milestones, once the core is solid.
 - [x] Milestone 5 — Shell hook integration
 - [x] Milestone 6 — Global start/stop toggle
 - [x] Milestone 7 — `lexdrill inspect`
+- [x] Milestone 8 — Rhythm (`beat`)
 - [x] Published to rubygems.org (`lexdrill` 0.2.0, `0.3.0` pending)

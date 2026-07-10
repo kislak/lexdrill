@@ -11,6 +11,7 @@ module Lexdrill::Inspector
       Words file:    #{Lexdrill::WordList::PATH} (#{words_summary})
       Counter file:  #{Lexdrill::WordList::COUNTER_PATH} (value: #{counter_value})
       Toggle:        #{toggle_summary}
+      Beat:          #{beat_summary}
       LEXDRILL_PATH: #{ENV.fetch('LEXDRILL_PATH', '(not set)')}
     REPORT
   end
@@ -29,5 +30,11 @@ module Lexdrill::Inspector
     return "enabled" if Lexdrill::Toggle.enabled?
 
     "stopped (#{Lexdrill::Toggle::PATH})"
+  end
+
+  def self.beat_summary
+    return "not set (plain word-by-word)" unless Lexdrill::Beat.configured?
+
+    "loop #{Lexdrill::Beat.loop_size}, repeat #{Lexdrill::Beat.repetitions}"
   end
 end

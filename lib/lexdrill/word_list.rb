@@ -19,8 +19,9 @@ class Lexdrill::WordList
 
   def self.take_index(size)
     counter = Lexdrill::Counter.new(COUNTER_PATH)
-    index = counter.bounded_value(size)
+    cycle_length = Lexdrill::Beat.cycle_length(size)
+    step = counter.bounded_value(cycle_length)
     counter.increment
-    index
+    Lexdrill::Beat.index_for(size, step)
   end
 end

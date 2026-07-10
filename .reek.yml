@@ -10,3 +10,10 @@ detectors:
     exclude:
       - "Lexdrill::CLI#run_start"
       - "Lexdrill::CLI#run_stop"
+      - "Lexdrill::CLI#clear_beat"
+  TooManyMethods:
+    exclude:
+      - "Lexdrill::CLI"
+  TooManyStatements:
+    exclude:
+      - "Lexdrill::Beat#self.locate"
