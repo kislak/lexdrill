@@ -52,7 +52,8 @@ apple
 ```
 (word 1 of 6 total; currently in the loop spanning words 1-3)
 
-**simple** — three drill signs, then the word, always in blue:
+**simple** — three drill signs (always blue), then the word on its own
+line in a separately-picked random color:
 ```
 ⟳⟳⟳
 apple

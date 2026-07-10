@@ -36,7 +36,7 @@ RSpec.describe Lexdrill::CLI do
       end
     end
 
-    it "prints simple-mode output with only the drill-sign line in blue, word left plain" do
+    it "prints simple-mode output with the drill-sign line in blue and the word in a random color" do
       Dir.mktmpdir("lexdrill-cli-next-simple-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
@@ -50,7 +50,7 @@ RSpec.describe Lexdrill::CLI do
         exit_code = nil
         expect do
           exit_code = described_class.new(["next"]).start
-        end.to output("\e[34m⟳⟳⟳\e[0m\nalpha\n").to_stdout
+        end.to output(/\A\e\[34m⟳⟳⟳\e\[0m\n\e\[\d+malpha\e\[0m\n\z/).to_stdout
         expect(exit_code).to eq(0)
       end
     end

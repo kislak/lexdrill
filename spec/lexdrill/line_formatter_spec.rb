@@ -46,12 +46,16 @@ RSpec.describe Lexdrill::LineFormatter do
       )
     end
 
-    it "in simple mode, is three blue drill signs, a newline, then the plain word" do
+    it "in simple mode, colors the drill-sign line blue and the word a separately-picked random color" do
       File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
       Lexdrill::Format.set("simple")
       Lexdrill::WordList.next
 
-      expect(described_class.format("alpha")).to eq("\e[34m⟳⟳⟳\e[0m\nalpha")
+      result = described_class.format("alpha")
+      expect(result).to match(/\A\e\[34m⟳⟳⟳\e\[0m\n\e\[\d+malpha\e\[0m\z/)
+
+      word_code = result.match(/\n\e\[(\d+)malpha/)[1].to_i
+      expect(Lexdrill::Colorizer::CODES).to include(word_code)
     end
   end
 end
