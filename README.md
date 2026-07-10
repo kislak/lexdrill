@@ -192,7 +192,8 @@ anything.
 | `drill polka\|waltz\|rock\|jazz\|jiga\|balkan\|samba <repetitions>` | Shorthand for a fixed loop size (see table above) |
 | `drill format simple\|full` | Set the output style (`simple` is the default) |
 | `drill add <text>` | Append a new item to the end of the list |
-| `drill list` | Print all items as `<count>\t<phrase>` (tab-separated), sorted by show count, highest first |
+| `drill list` | Show how many times each item has been shown, numbered |
 | `drill open` | Open the list file in `$EDITOR`/`$VISUAL` (falls back to `vi`) |
-| `drill stats` | Show how many times each item has been shown, numbered |
-| `drill rand <n>` | Shell hook shows a word ~1-in-`n` times (`n=1` is every time, the default) |
+| `drill stats` | Print all items as `<count>\t<phrase>` (tab-separated), sorted by show count, highest first |
+| `drill rand <n>` | `drill next` shows a word ~1-in-`n` times (`n=1` is every time, the default) |
+| `drill go <number>` | Jump so the next `drill next` shows item `<number>` (1-based, see `drill list`) — prints nothing itself; refuses a graduated item; has no effect while `drill beat rand` is active, since that mode ignores the counter entirely |

@@ -80,6 +80,12 @@ module Lexdrill::Beat
     loop_info(word_count, step).index
   end
 
+  # The inverse of index_for: the earliest step that lands on target_index,
+  # for `drill go` to jump the counter straight to a specific word.
+  def self.step_for_index(word_count, target_index)
+    (0...cycle_length(word_count)).find { |step| index_for(word_count, step) == target_index }
+  end
+
   # Full detail on where `step` falls: word index, the current loop's word
   # range, which repeat pass it is, and how many total. A single "loop"
   # spanning the whole list (shown once) when no beat is configured.

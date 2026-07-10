@@ -117,6 +117,28 @@ RSpec.describe Lexdrill::Beat do
     end
   end
 
+  describe ".step_for_index" do
+    it "returns the index unchanged when not configured" do
+      expect(described_class.step_for_index(6, 4)).to eq(4)
+    end
+
+    it "returns a step that index_for maps back to the target index" do
+      described_class.set(3, 2)
+      # word list [a,b,c,d,e,f] (indices 0..5) -> a,b,c,a,b,c,d,e,f,d,e,f
+      (0...6).each do |target_index|
+        step = described_class.step_for_index(6, target_index)
+        expect(described_class.index_for(6, step)).to eq(target_index)
+      end
+    end
+
+    it "finds a valid step even for the final short chunk" do
+      described_class.set(3, 2)
+      # word list of 7: chunks [0,1,2] [3,4,5] [6]
+      step = described_class.step_for_index(7, 6)
+      expect(described_class.index_for(7, step)).to eq(6)
+    end
+  end
+
   describe ".loop_info" do
     it "spans the whole list as a single one-pass loop when not configured" do
       info = described_class.loop_info(6, 4)

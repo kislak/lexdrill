@@ -34,4 +34,19 @@ RSpec.describe Lexdrill::Counter do
       expect(described_class.new(@path).value).to eq(2)
     end
   end
+
+  describe "#set" do
+    it "persists the given value directly, readable by a fresh instance" do
+      described_class.new(@path).set(7)
+      expect(described_class.new(@path).value).to eq(7)
+    end
+
+    it "overwrites whatever was there before" do
+      counter = described_class.new(@path)
+      counter.increment
+      counter.increment
+      counter.set(3)
+      expect(described_class.new(@path).value).to eq(3)
+    end
+  end
 end

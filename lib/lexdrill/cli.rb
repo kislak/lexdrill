@@ -16,7 +16,8 @@ class Lexdrill::CLI
     run_list: %w[list],
     run_open: %w[open],
     run_stats: %w[stats],
-    run_rand: %w[rand]
+    run_rand: %w[rand],
+    run_go: %w[go]
   }.freeze
 
   def self.start(argv = ARGV)
@@ -63,10 +64,11 @@ class Lexdrill::CLI
                         Shorthand for a fixed loop size (2 through 8, in order)
         drill format simple|full   Set the output style (simple is the default)
         drill add <text>   Append a new item to the end of the list
-        drill list         Print items as <count>\t<phrase>, tab-separated, highest count first
+        drill list         Show how many times each item has been shown
         drill open         Open the list file in $EDITOR/$VISUAL (falls back to vi)
-        drill stats        Show how many times each item has been shown
+        drill stats        Print items as <count>\t<phrase>, tab-separated, highest count first
         drill rand <n>     drill next shows a word ~1-in-n times (n=1 is every time)
+        drill go <number>  Jump so the next `next` shows item <number> (1-based, see drill list)
     HELP
     0
   end
@@ -220,8 +222,7 @@ class Lexdrill::CLI
     return print_no_words(Lexdrill::WordList::PATH) if words.empty?
 
     counts = Lexdrill::Stats.counts
-    pairs = words.map { |word| [counts.fetch(word, 0), word] }.sort_by { |count, _word| -count }
-    pairs.each { |count, word| puts "#{count}\t#{word}" }
+    words.each_with_index { |word, index| puts "#{index + 1}. #{word} (#{counts.fetch(word, 0)})" }
     0
   end
 
@@ -235,7 +236,8 @@ class Lexdrill::CLI
     return print_no_words(Lexdrill::WordList::PATH) if words.empty?
 
     counts = Lexdrill::Stats.counts
-    words.each_with_index { |word, index| puts "#{index + 1}. #{word} (#{counts.fetch(word, 0)})" }
+    pairs = words.map { |word| [counts.fetch(word, 0), word] }.sort_by { |count, _word| -count }
+    pairs.each { |count, word| puts "#{count}\t#{word}" }
     0
   end
 
@@ -249,6 +251,37 @@ class Lexdrill::CLI
 
   def print_rand_usage
     warn "usage: drill rand <n>   (drill next shows a word ~1-in-n times; n=1 is every time)"
+    1
+  end
+
+  def run_go
+    words = Lexdrill::WordList.words
+    return print_no_words(Lexdrill::WordList::PATH) if words.empty?
+
+    total = words.size
+    number = argv[1].to_s.to_i
+    return print_go_usage(total) unless (1..total).cover?(number)
+
+    target = words[number - 1]
+    return print_go_graduated(target) if Lexdrill::Stats.graduated?(target)
+
+    jump_to(target)
+    0
+  end
+
+  def jump_to(target)
+    active = Lexdrill::WordList.active_words
+    step = Lexdrill::Beat.step_for_index(active.size, active.index(target))
+    Lexdrill::Counter.new(Lexdrill::WordList::COUNTER_PATH).set(step)
+  end
+
+  def print_go_usage(total)
+    warn "usage: drill go <number>   (1 through #{total}, see drill list)"
+    1
+  end
+
+  def print_go_graduated(word)
+    warn "drill: #{word.inspect} has already graduated and won't be selected by next"
     1
   end
 

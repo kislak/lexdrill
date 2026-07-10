@@ -13,7 +13,11 @@ detectors:
       - "Lexdrill::CLI#clear_beat"
       - "Lexdrill::CLI#colored_line"
       - "Lexdrill::CLI#set_rand_beat"
+      - "Lexdrill::CLI#jump_to"
   TooManyMethods:
+    exclude:
+      - "Lexdrill::CLI"
+  RepeatedConditional:
     exclude:
       - "Lexdrill::CLI"
   TooManyStatements:
@@ -22,6 +26,7 @@ detectors:
       - "Lexdrill::CLI#run_add"
       - "Lexdrill::CLI#run_list"
       - "Lexdrill::CLI#run_stats"
+      - "Lexdrill::CLI#run_go"
       - "Lexdrill::Colorizer#self.gradient_code"
       - "Lexdrill::Inspector#self.words_summary"
       - "Lexdrill::WordList#self.next"

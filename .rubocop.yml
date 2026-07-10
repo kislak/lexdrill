@@ -24,7 +24,7 @@ Metrics/MethodLength:
     - "spec/**/*"
 
 Metrics/ClassLength:
-  Max: 210
+  Max: 235
   Exclude:
     - "spec/**/*"
 

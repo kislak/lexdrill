@@ -17,6 +17,10 @@ class Lexdrill::Counter
     File.write(path, (value + 1).to_s)
   end
 
+  def set(step)
+    File.write(path, step.to_s)
+  end
+
   def reset
     File.write(path, "0")
   end

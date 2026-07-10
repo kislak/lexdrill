@@ -332,7 +332,7 @@ RSpec.describe Lexdrill::CLI do
     end
 
     it "prints each item as count<TAB>phrase" do
-      Dir.mktmpdir("lexdrill-cli-list-spec") do |dir|
+      Dir.mktmpdir("lexdrill-cli-stats-tab-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
@@ -346,14 +346,14 @@ RSpec.describe Lexdrill::CLI do
 
         exit_code = nil
         expect do
-          exit_code = described_class.new(["list"]).start
+          exit_code = described_class.new(["stats"]).start
         end.to output("2\talpha\n1\tbeta\n").to_stdout
         expect(exit_code).to eq(0)
       end
     end
 
     it "sorts items by show count, highest first, regardless of list file order" do
-      Dir.mktmpdir("lexdrill-cli-list-sort-spec") do |dir|
+      Dir.mktmpdir("lexdrill-cli-stats-sort-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
         stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
@@ -365,7 +365,7 @@ RSpec.describe Lexdrill::CLI do
 
         exit_code = nil
         expect do
-          exit_code = described_class.new(["list"]).start
+          exit_code = described_class.new(["stats"]).start
         end.to output("3\talpha\n2\tbeta\n1\tgamma\n").to_stdout
         expect(exit_code).to eq(0)
       end
@@ -418,7 +418,7 @@ RSpec.describe Lexdrill::CLI do
     end
 
     it "prints show counts for each item, numbered" do
-      Dir.mktmpdir("lexdrill-cli-stats-spec") do |dir|
+      Dir.mktmpdir("lexdrill-cli-list-numbered-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
@@ -432,7 +432,7 @@ RSpec.describe Lexdrill::CLI do
 
         exit_code = nil
         expect do
-          exit_code = described_class.new(["stats"]).start
+          exit_code = described_class.new(["list"]).start
         end.to output("1. alpha (2)\n2. beta (1)\n").to_stdout
         expect(exit_code).to eq(0)
       end
@@ -510,6 +510,65 @@ RSpec.describe Lexdrill::CLI do
         exit_code = nil
         expect { exit_code = described_class.new(["next"]).start }.to output(/alpha/).to_stdout
         expect(exit_code).to eq(0)
+      end
+    end
+
+    it "go jumps so the following next shows the requested item, without printing anything itself" do
+      Dir.mktmpdir("lexdrill-cli-go-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\nbeta\ngamma\n")
+
+        exit_code = nil
+        expect { exit_code = described_class.new(%w[go 3]).start }.to_not output.to_stdout
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::WordList.next).to eq("gamma")
+      end
+    end
+
+    it "reports on stderr and returns 1 when there are no words to go to" do
+      Dir.mktmpdir("lexdrill-cli-go-empty-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "")
+
+        exit_code = nil
+        expect { exit_code = described_class.new(%w[go 1]).start }.to output(/no words/).to_stderr
+        expect(exit_code).to eq(1)
+      end
+    end
+
+    it "reports usage on stderr and returns 1 for a number out of range" do
+      Dir.mktmpdir("lexdrill-cli-go-range-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
+
+        exit_code = nil
+        expect { exit_code = described_class.new(%w[go 3]).start }.to output(/usage/).to_stderr
+        expect(exit_code).to eq(1)
+
+        exit_code = nil
+        expect { exit_code = described_class.new(%w[go 0]).start }.to output(/usage/).to_stderr
+        expect(exit_code).to eq(1)
+      end
+    end
+
+    it "reports on stderr and returns 1 when the target item has already graduated" do
+      Dir.mktmpdir("lexdrill-cli-go-graduated-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
+        File.write(Lexdrill::Stats::PATH, JSON.generate("alpha" => Lexdrill::Stats::GRADUATION_THRESHOLD))
+
+        exit_code = nil
+        expect { exit_code = described_class.new(%w[go 1]).start }.to output(/graduated/).to_stderr
+        expect(exit_code).to eq(1)
       end
     end
   end
