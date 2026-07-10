@@ -67,7 +67,7 @@ milestones, once the core is solid.
 
 ## Status
 
-- [ ] Milestone 1 — Gem scaffold + quality tooling
+- [x] Milestone 1 — Gem scaffold + quality tooling
 - [ ] Milestone 2 — Word list source
 - [ ] Milestone 3 — Local interaction store
 - [ ] Milestone 4 — `lexdrill next` command
