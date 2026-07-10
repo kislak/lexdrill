@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage
-  spec.metadata["rubygems_mfa_required"] = "true"
+  spec.metadata["rubygems_mfa_required"] = "false"
 
   spec.files = Dir.chdir(__dir__) do
     Dir["lib/**/*.rb"] + Dir["bin/*"] + %w[README.md LICENSE.txt lexdrill.gemspec Gemfile]
