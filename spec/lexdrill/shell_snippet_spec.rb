@@ -9,10 +9,10 @@ RSpec.describe Lexdrill::ShellSnippet do
       expect(snippet).to include('[[ -f "$HOME/.drill.disabled" ]] && return')
     end
 
-    it "returns the bash snippet with a PROMPT_COMMAND hook, a toggle check, and an idempotency guard" do
+    it "returns the bash snippet with a PS1 hook, a toggle check, and an idempotency guard" do
       snippet = described_class.for("bash")
-      expect(snippet).to include('PROMPT_COMMAND="drill_precmd;${PROMPT_COMMAND}"')
-      expect(snippet).to include("command drill next 2>/dev/null")
+      expect(snippet).to include(%(PS1="${PS1}"'$(drill_precmd)'))
+      expect(snippet).to include("command drill next >/dev/tty 2>/dev/null")
       expect(snippet).to include('[ -f "$HOME/.drill.disabled" ] && return')
     end
 

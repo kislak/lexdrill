@@ -110,6 +110,17 @@ everything looks correctly configured.
 hook block above, so it runs first) instead of relying on it only being in
 `~/.zlogin` / `~/.bash_profile`. It's safe to leave it in both places.
 
+#### Word only shows once per session, then stops (bash)
+
+The bash hook works by appending a `$(drill_precmd)` command substitution to
+`PS1`, which bash re-evaluates on every prompt render — this is deliberate,
+since some environments (notably Google Cloud Shell's `bashrc.google`)
+snapshot and unconditionally overwrite `PROMPT_COMMAND` after your `.bashrc`
+runs, silently dropping anything hooked in that way. If you installed an
+older version of the hook and see the word print exactly once and never
+again, re-run `drill hook bash` and update the line in your `.bashrc` to the
+current snippet.
+
 ### Rhythm (`beat`)
 
 By default `next` just advances one word at a time. You can instead have it

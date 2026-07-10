@@ -72,14 +72,17 @@ milestones, once the core is solid.
 ### 5. Shell hook integration (zsh/bash)
 - `Lexdrill::ShellSnippet` generates the integration snippet for
   `lexdrill hook zsh|bash`.
-- zsh: registers a `precmd_functions` entry; bash: prepends to
-  `PROMPT_COMMAND`. Both call `command lexdrill next 2>/dev/null` (bypasses
-  aliases, swallows stderr so a misconfigured/missing `.drill.txt` doesn't
-  spam every prompt) and are idempotent if the rc file gets sourced twice.
+- zsh: registers a `precmd_functions` entry; bash: appends a
+  `$(drill_precmd)` command substitution to `PS1` (re-evaluated on every
+  prompt render, unlike `PROMPT_COMMAND`, which some environments — e.g.
+  Google Cloud Shell — snapshot and overwrite after `.bashrc` runs). Both
+  call `command lexdrill next 2>/dev/null` (bypasses aliases, swallows
+  stderr so a misconfigured/missing `.drill.txt` doesn't spam every prompt)
+  and are idempotent if the rc file gets sourced twice.
 - Usage: `eval "$(lexdrill hook zsh)"` (or `bash`) added to `.zshrc`/
   `.bashrc`.
 - **Verify:** unit tests for the generated snippets + a manual run
-  simulating `precmd_functions`/`PROMPT_COMMAND` firing in real zsh/bash
+  simulating `precmd_functions`/`PS1` expansion firing in real zsh/bash
   processes, confirming the word advances on each simulated prompt and
   double-sourcing doesn't double-register.
 
