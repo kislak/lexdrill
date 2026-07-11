@@ -299,5 +299,6 @@ itself automatically).
 | `drill go <number>` | Jump so the next `drill next` shows item `<number>` (1-based, see `drill list`) — prints nothing itself; refuses a graduated item; has no effect while `drill beat rand` is active, since that mode ignores the counter entirely |
 | `drill remote <url>` | Set the Google Sheet used by the service account flow (global, parses the spreadsheet id out of a normal share URL); whichever of `drill remote`/`drill oauth` was set more recently wins |
 | `drill oauth <url>` | Set the Google Sheet used by the OAuth (personal-login) flow (global, parses the spreadsheet id out of a normal share URL); whichever of `drill remote`/`drill oauth` was set more recently wins |
+| `drill sheet` | Print a link to whichever spreadsheet (`drill remote`/`drill oauth`) is currently active |
 | `drill export <sheet-name>` | Export the word list text to the named tab (created if it doesn't exist), overwriting it; uses whichever of `drill remote`/`drill oauth` was configured most recently (first OAuth use triggers a one-time Google device-flow sign-in) |
 | `drill import <sheet-name>` | Replace the local word list with column A of the named tab |

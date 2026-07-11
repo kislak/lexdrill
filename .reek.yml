@@ -17,6 +17,10 @@ detectors:
       - "Lexdrill::CLI#export_rows"
       - "Lexdrill::CLI#sheets_target"
       - "Lexdrill::CLI#newer?"
+      - "Lexdrill::CLI#spreadsheet_id_for"
+  ControlParameter:
+    exclude:
+      - "Lexdrill::CLI#spreadsheet_id_for"
   TooManyMethods:
     exclude:
       - "Lexdrill::CLI"

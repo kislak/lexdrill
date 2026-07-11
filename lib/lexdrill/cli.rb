@@ -20,6 +20,7 @@ class Lexdrill::CLI
     run_go: %w[go],
     run_remote: %w[remote],
     run_oauth: %w[oauth],
+    run_sheet: %w[sheet],
     run_export: %w[export],
     run_import: %w[import]
   }.freeze
@@ -76,6 +77,7 @@ class Lexdrill::CLI
         drill remote <url>          Set the Google Sheet used by a local service account key
                                     (~/.drill.gcp-service-account.json) — no interactive sign-in
         drill oauth <url>           Set the Google Sheet used by the OAuth (personal-login) flow
+        drill sheet                 Print a link to the currently active spreadsheet
         drill export <sheet-name>   Export the word list text to the given tab (overwrites its
                                     contents); uses whichever of drill remote/drill oauth was set
                                     more recently (oauth opens a one-time sign-in on first use)
@@ -343,9 +345,17 @@ class Lexdrill::CLI
   # either command always takes effect. Returns [spreadsheet_id,
   # access_token], or nil if neither is configured.
   def sheets_target
-    case latest_remote_kind
-    when :remote then [Lexdrill::Remote.spreadsheet_id, Lexdrill::ServiceAccountAuth.fetch_token!]
-    when :oauth then [Lexdrill::OauthRemote.spreadsheet_id, Lexdrill::GoogleAuth.ensure_token!]
+    kind = latest_remote_kind
+    spreadsheet_id = spreadsheet_id_for(kind)
+    return unless spreadsheet_id
+
+    [spreadsheet_id, kind == :remote ? Lexdrill::ServiceAccountAuth.fetch_token! : Lexdrill::GoogleAuth.ensure_token!]
+  end
+
+  def spreadsheet_id_for(kind)
+    case kind
+    when :remote then Lexdrill::Remote.spreadsheet_id
+    when :oauth then Lexdrill::OauthRemote.spreadsheet_id
     end
   end
 
@@ -359,6 +369,14 @@ class Lexdrill::CLI
   end
 
   def newer?(path, other_path) = File.mtime(path) >= File.mtime(other_path)
+
+  def run_sheet
+    spreadsheet_id = spreadsheet_id_for(latest_remote_kind)
+    return print_no_remote unless spreadsheet_id
+
+    puts "https://docs.google.com/spreadsheets/d/#{spreadsheet_id}/edit"
+    0
+  end
 
   def run_export
     sheet_name = argv[1]

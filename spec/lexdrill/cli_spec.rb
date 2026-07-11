@@ -634,6 +634,49 @@ RSpec.describe Lexdrill::CLI do
       end
     end
 
+    it "prints a link to the remote (service account) spreadsheet when it is the more recent one" do
+      Dir.mktmpdir("lexdrill-cli-sheet-remote-spec") do |dir|
+        stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
+        stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
+        File.write(Lexdrill::OauthRemote::PATH, "oauth-sheet-id")
+        File.utime(Time.now - 10, Time.now - 10, Lexdrill::OauthRemote::PATH)
+        File.write(Lexdrill::Remote::PATH, "remote-sheet-id")
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(["sheet"]).start
+        end.to output("https://docs.google.com/spreadsheets/d/remote-sheet-id/edit\n").to_stdout
+        expect(exit_code).to eq(0)
+      end
+    end
+
+    it "prints a link to the oauth spreadsheet when it is the more recent one" do
+      Dir.mktmpdir("lexdrill-cli-sheet-oauth-spec") do |dir|
+        stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
+        stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
+        File.write(Lexdrill::Remote::PATH, "remote-sheet-id")
+        File.utime(Time.now - 10, Time.now - 10, Lexdrill::Remote::PATH)
+        File.write(Lexdrill::OauthRemote::PATH, "oauth-sheet-id")
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(["sheet"]).start
+        end.to output("https://docs.google.com/spreadsheets/d/oauth-sheet-id/edit\n").to_stdout
+        expect(exit_code).to eq(0)
+      end
+    end
+
+    it "reports on stderr and returns 1 when no remote/oauth spreadsheet is configured for sheet" do
+      Dir.mktmpdir("lexdrill-cli-sheet-no-remote-spec") do |dir|
+        stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
+        stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
+
+        exit_code = nil
+        expect { exit_code = described_class.new(["sheet"]).start }.to output(/no remote spreadsheet/).to_stderr
+        expect(exit_code).to eq(1)
+      end
+    end
+
     it "reports usage on stderr and returns 1 when export is given no sheet name" do
       exit_code = nil
       expect { exit_code = described_class.new(["export"]).start }.to output(/usage/).to_stderr
