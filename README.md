@@ -3,6 +3,8 @@
 The `lexdrill` gem installs a `drill` command that prints a vocabulary word or
 phrase on demand, tracking how often each one has been shown.
 
+![lexdrill demo](docs/demo.gif)
+
 ## Installation
 
 ```bash
