@@ -17,7 +17,9 @@ class Lexdrill::CLI
     run_open: %w[open],
     run_stats: %w[stats],
     run_rand: %w[rand],
-    run_go: %w[go]
+    run_go: %w[go],
+    run_remote: %w[remote],
+    run_export: %w[export]
   }.freeze
 
   def self.start(argv = ARGV)
@@ -69,6 +71,9 @@ class Lexdrill::CLI
         drill stats        Print items as <count>\t<phrase>, tab-separated, highest count first
         drill rand <n>     drill next shows a word ~1-in-n times (n=1 is every time)
         drill go <number>  Jump so the next `next` shows item <number> (1-based, see drill list)
+        drill remote <url>          Set the Google Sheet to export to (global, ~/.drill.remote)
+        drill export <sheet-name>   Export the word list text to the given tab (overwrites its
+                                    contents); first run opens a one-time Google device-flow sign-in
     HELP
     0
   end
@@ -282,6 +287,77 @@ class Lexdrill::CLI
 
   def print_go_graduated(word)
     warn "drill: #{word.inspect} has already graduated and won't be selected by next"
+    1
+  end
+
+  def run_remote
+    url = argv[1]
+    return print_remote_usage unless url
+
+    Lexdrill::Remote.set(url)
+    puts "remote spreadsheet set: #{Lexdrill::Remote.spreadsheet_id}"
+    0
+  rescue ArgumentError
+    print_invalid_remote_url(url)
+  end
+
+  def print_remote_usage
+    warn "usage: drill remote <google-sheets-url>"
+    1
+  end
+
+  def print_invalid_remote_url(url)
+    warn "drill: could not find a spreadsheet id in #{url.inspect}"
+    1
+  end
+
+  def run_export
+    sheet_name = argv[1]
+    return print_export_usage unless sheet_name
+    return print_no_remote unless Lexdrill::Remote.configured?
+
+    perform_export(sheet_name)
+  rescue Lexdrill::GoogleAuth::AuthError => error
+    warn "drill: #{error.message}"
+    1
+  rescue Lexdrill::SheetsClient::ApiError => error
+    print_sheets_api_error(error, sheet_name)
+  rescue Lexdrill::HTTPClient::NetworkError => error
+    warn "drill: network error talking to Google (#{error.message})"
+    1
+  end
+
+  def perform_export(sheet_name)
+    token = Lexdrill::GoogleAuth.ensure_token!
+    rows = export_rows
+    Lexdrill::SheetsClient.overwrite_sheet(Lexdrill::Remote.spreadsheet_id, sheet_name, rows, token)
+    puts "exported #{rows.size} word(s) to #{sheet_name.inspect}"
+    0
+  end
+
+  def export_rows
+    Lexdrill::WordList.words.map { |word| [word] }
+  end
+
+  def print_export_usage
+    warn "usage: drill export <sheet-name>"
+    1
+  end
+
+  def print_no_remote
+    warn "drill: no remote spreadsheet configured; run `drill remote <url>` first"
+    1
+  end
+
+  def print_sheets_api_error(error, sheet_name)
+    status = error.status
+    message = error.message
+    case status
+    when 404 then warn "drill: spreadsheet not found or not accessible with this Google account (check `drill remote`)"
+    when 403 then warn "drill: access denied — the signed-in Google account needs edit access to the spreadsheet"
+    when 400 then warn "drill: #{message} (is #{sheet_name.inspect} a real tab in the spreadsheet?)"
+    else warn "drill: Google Sheets API error (#{status}): #{message}"
+    end
     1
   end
 

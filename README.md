@@ -180,6 +180,57 @@ longer comes up automatically). If every word in the list has been
 mastered, `next` reports that on stderr and exits 1 instead of showing
 anything.
 
+### Google Sheets export
+
+`drill export` mirrors your word list (text only, no stats) into a tab of a
+Google Sheet you own, using **your own Google account** — not a service
+account key. That distinction matters: a service-account private key would
+have to be embedded in this published gem, meaning anyone who `gem install`s
+lexdrill would get it too. Instead, `drill` uses the OAuth 2.0 **Device
+Authorization Grant** ("visit this URL, enter this code," the same style of
+flow `gcloud auth login` uses) — you approve access to your own account
+once, and the resulting token is cached locally at
+`~/.drill.gcp-token.json` (mode `0600`), never published or shared.
+
+The OAuth client id/secret embedded in `lib/lexdrill/google_auth.rb` are
+**not** secret for this use — Google's own docs say client credentials for
+"TVs and Limited Input devices" / installed-app clients aren't treated as
+confidential. The actual secret is your personal refresh token, which is
+generated only after you interactively approve, and stays on your machine.
+
+#### One-time Google Cloud setup (you do this yourself)
+
+1. Go to <https://console.cloud.google.com>, create or select a project.
+2. **APIs & Services → Library** → search "Google Sheets API" → Enable.
+3. **APIs & Services → OAuth consent screen**: User type **External**;
+   publishing status **Testing** is fine — add your own Google account
+   under "Test users".
+4. **APIs & Services → Credentials → Create Credentials → OAuth client
+   ID** → Application type **"TVs and Limited Input devices"** (no redirect
+   URI needed). Copy the generated Client ID and Client secret into
+   `CLIENT_ID`/`CLIENT_SECRET` in `lib/lexdrill/google_auth.rb`.
+5. "Testing" publishing status has historically imposed a 7-day
+   refresh-token expiry for some scopes. If `drill export` starts asking
+   you to re-authorize every week, switch the consent screen to **"In
+   production"** — for the `spreadsheets` scope (not a "restricted" scope)
+   this just adds an "unverified app" click-through on first consent, no
+   Google review required.
+
+#### Using it
+
+```bash
+drill remote 'https://docs.google.com/spreadsheets/d/1opBP4APL5SUvepm9qwjIYRNtDZdoY1Ee87F5PWdxaMg/edit?usp=sharing'
+drill export Sheet1
+```
+
+The first `export` prints a URL and a short code — visit it, sign in with
+the Google account that has edit access to that spreadsheet, and approve.
+Every export after that is silent (the cached token refreshes itself
+automatically). If `<sheet-name>` doesn't exist yet as a tab in the
+spreadsheet, `export` creates it; either way it always **overwrites** the
+tab's contents with the current word list text (one word/phrase per row, no
+stats), so it stays an exact mirror even if the list shrinks.
+
 ### Commands
 
 | Command | What it does |
@@ -197,3 +248,5 @@ anything.
 | `drill stats` | Print all items as `<count>\t<phrase>` (tab-separated), sorted by show count, highest first |
 | `drill rand <n>` | `drill next` shows a word ~1-in-`n` times (`n=1` is every time, the default) |
 | `drill go <number>` | Jump so the next `drill next` shows item `<number>` (1-based, see `drill list`) — prints nothing itself; refuses a graduated item; has no effect while `drill beat rand` is active, since that mode ignores the counter entirely |
+| `drill remote <url>` | Set the Google Sheet to export to (global, parses the spreadsheet id out of a normal share URL) |
+| `drill export <sheet-name>` | Export the word list text to the named tab (created if it doesn't exist), overwriting it; first run triggers a one-time Google device-flow sign-in |

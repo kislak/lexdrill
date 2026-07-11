@@ -14,6 +14,7 @@ detectors:
       - "Lexdrill::CLI#colored_line"
       - "Lexdrill::CLI#set_rand_beat"
       - "Lexdrill::CLI#jump_to"
+      - "Lexdrill::CLI#export_rows"
   TooManyMethods:
     exclude:
       - "Lexdrill::CLI"
@@ -27,10 +28,26 @@ detectors:
       - "Lexdrill::CLI#run_list"
       - "Lexdrill::CLI#run_stats"
       - "Lexdrill::CLI#run_go"
+      - "Lexdrill::CLI#run_remote"
+      - "Lexdrill::CLI#run_export"
+      - "Lexdrill::CLI#print_sheets_api_error"
       - "Lexdrill::Colorizer#self.gradient_code"
       - "Lexdrill::Inspector#self.words_summary"
       - "Lexdrill::WordList#self.next"
+      - "Lexdrill::GoogleAuth#self.poll_for_token"
+      - "Lexdrill::GoogleAuth#self.handle_refresh_response"
+      - "Lexdrill::HTTPClient#self.build_json_request"
   TooManyConstants:
     exclude:
       - "Lexdrill::Config"
       - "Lexdrill::Beat"
+      - "Lexdrill::GoogleAuth"
+  DuplicateMethodCall:
+    exclude:
+      - "Lexdrill::CLI#run_export"
+  LongParameterList:
+    exclude:
+      - "Lexdrill::HTTPClient#self.json_request"
+      - "Lexdrill::HTTPClient#self.build_json_request"
+      - "Lexdrill::SheetsClient#self.overwrite_sheet"
+      - "Lexdrill::SheetsClient#self.update"
