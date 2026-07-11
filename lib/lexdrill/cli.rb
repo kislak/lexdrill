@@ -19,7 +19,9 @@ class Lexdrill::CLI
     run_rand: %w[rand],
     run_go: %w[go],
     run_remote: %w[remote],
-    run_export: %w[export]
+    run_oauth: %w[oauth],
+    run_export: %w[export],
+    run_import: %w[import]
   }.freeze
 
   def self.start(argv = ARGV)
@@ -71,9 +73,13 @@ class Lexdrill::CLI
         drill stats        Print items as <count>\t<phrase>, tab-separated, highest count first
         drill rand <n>     drill next shows a word ~1-in-n times (n=1 is every time)
         drill go <number>  Jump so the next `next` shows item <number> (1-based, see drill list)
-        drill remote <url>          Set the Google Sheet to export to (global, ~/.drill.remote)
+        drill remote <url>          Set the Google Sheet used by a local service account key
+                                    (~/.drill.gcp-service-account.json) — no interactive sign-in
+        drill oauth <url>           Set the Google Sheet used by the OAuth (personal-login) flow
         drill export <sheet-name>   Export the word list text to the given tab (overwrites its
-                                    contents); first run opens a one-time Google device-flow sign-in
+                                    contents); uses whichever of drill remote/drill oauth was set
+                                    more recently (oauth opens a one-time sign-in on first use)
+        drill import <sheet-name>   Replace the local word list with column A of the given tab
     HELP
     0
   end
@@ -311,13 +317,58 @@ class Lexdrill::CLI
     1
   end
 
+  def run_oauth
+    url = argv[1]
+    return print_oauth_usage unless url
+
+    Lexdrill::OauthRemote.set(url)
+    puts "oauth spreadsheet set: #{Lexdrill::OauthRemote.spreadsheet_id}"
+    0
+  rescue ArgumentError
+    print_invalid_oauth_url(url)
+  end
+
+  def print_oauth_usage
+    warn "usage: drill oauth <google-sheets-url>"
+    1
+  end
+
+  def print_invalid_oauth_url(url)
+    warn "drill: could not find a spreadsheet id in #{url.inspect}"
+    1
+  end
+
+  # Uses whichever of `drill remote` (service account) / `drill oauth`
+  # (personal login) was set more recently, so switching between them with
+  # either command always takes effect. Returns [spreadsheet_id,
+  # access_token], or nil if neither is configured.
+  def sheets_target
+    case latest_remote_kind
+    when :remote then [Lexdrill::Remote.spreadsheet_id, Lexdrill::ServiceAccountAuth.fetch_token!]
+    when :oauth then [Lexdrill::OauthRemote.spreadsheet_id, Lexdrill::GoogleAuth.ensure_token!]
+    end
+  end
+
+  def latest_remote_kind
+    remote_set = Lexdrill::Remote.configured?
+    oauth_set = Lexdrill::OauthRemote.configured?
+    return :remote if remote_set && (!oauth_set || newer?(Lexdrill::Remote::PATH, Lexdrill::OauthRemote::PATH))
+    return :oauth if oauth_set
+
+    nil
+  end
+
+  def newer?(path, other_path) = File.mtime(path) >= File.mtime(other_path)
+
   def run_export
     sheet_name = argv[1]
     return print_export_usage unless sheet_name
-    return print_no_remote unless Lexdrill::Remote.configured?
 
-    perform_export(sheet_name)
-  rescue Lexdrill::GoogleAuth::AuthError => error
+    target = sheets_target
+    return print_no_remote unless target
+
+    perform_export(sheet_name, *target)
+  rescue Lexdrill::GoogleAuth::AuthError, Lexdrill::ServiceAccountAuth::AuthError => error
     warn "drill: #{error.message}"
     1
   rescue Lexdrill::SheetsClient::ApiError => error
@@ -327,10 +378,9 @@ class Lexdrill::CLI
     1
   end
 
-  def perform_export(sheet_name)
-    token = Lexdrill::GoogleAuth.ensure_token!
+  def perform_export(sheet_name, spreadsheet_id, token)
     rows = export_rows
-    Lexdrill::SheetsClient.overwrite_sheet(Lexdrill::Remote.spreadsheet_id, sheet_name, rows, token)
+    Lexdrill::SheetsClient.overwrite_sheet(spreadsheet_id, sheet_name, rows, token)
     puts "exported #{rows.size} word(s) to #{sheet_name.inspect}"
     0
   end
@@ -345,7 +395,45 @@ class Lexdrill::CLI
   end
 
   def print_no_remote
-    warn "drill: no remote spreadsheet configured; run `drill remote <url>` first"
+    warn "drill: no remote spreadsheet configured; run `drill remote <url>` (service account) " \
+         "or `drill oauth <url>` (personal login) first"
+    1
+  end
+
+  def run_import
+    sheet_name = argv[1]
+    return print_import_usage unless sheet_name
+
+    target = sheets_target
+    return print_no_remote unless target
+
+    perform_import(sheet_name, *target)
+  rescue Lexdrill::GoogleAuth::AuthError, Lexdrill::ServiceAccountAuth::AuthError => error
+    warn "drill: #{error.message}"
+    1
+  rescue Lexdrill::SheetsClient::ApiError => error
+    print_sheets_api_error(error, sheet_name)
+  rescue Lexdrill::HTTPClient::NetworkError => error
+    warn "drill: network error talking to Google (#{error.message})"
+    1
+  end
+
+  def perform_import(sheet_name, spreadsheet_id, token)
+    words = Lexdrill::SheetsClient.read_column(spreadsheet_id, sheet_name, token)
+    return print_empty_import(sheet_name) if words.empty?
+
+    File.write(Lexdrill::WordList::PATH, "#{words.join("\n")}\n", encoding: "UTF-8")
+    puts "imported #{words.size} word(s) from #{sheet_name.inspect}"
+    0
+  end
+
+  def print_import_usage
+    warn "usage: drill import <sheet-name>"
+    1
+  end
+
+  def print_empty_import(sheet_name)
+    warn "drill: #{sheet_name.inspect} has no data to import"
     1
   end
 
@@ -353,8 +441,8 @@ class Lexdrill::CLI
     status = error.status
     message = error.message
     case status
-    when 404 then warn "drill: spreadsheet not found or not accessible with this Google account (check `drill remote`)"
-    when 403 then warn "drill: access denied — the signed-in Google account needs edit access to the spreadsheet"
+    when 404 then warn "drill: spreadsheet not found or not accessible (check `drill remote`/`drill oauth`)"
+    when 403 then warn "drill: access denied — make sure the spreadsheet is shared with the right account"
     when 400 then warn "drill: #{message} (is #{sheet_name.inspect} a real tab in the spreadsheet?)"
     else warn "drill: Google Sheets API error (#{status}): #{message}"
     end

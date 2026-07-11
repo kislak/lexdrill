@@ -4,9 +4,10 @@ require "uri"
 require "json"
 
 # Thin wrapper around the Google Sheets API v4 REST endpoints needed by
-# `drill export`: create the target tab if it doesn't already exist, clear
-# its contents, write new rows into it, then auto-fit column A's width to
-# the content so long phrases aren't visually truncated.
+# `drill export`/`drill import`: create the target tab if it doesn't already
+# exist, clear its contents, write new rows into it, then auto-fit column
+# A's width to the content so long phrases aren't visually truncated; or,
+# for import, read column A back out of an existing tab.
 module Lexdrill::SheetsClient
   BASE_URL = "https://sheets.googleapis.com/v4/spreadsheets"
 
@@ -66,6 +67,14 @@ module Lexdrill::SheetsClient
     url = "#{BASE_URL}/#{spreadsheet_id}/values/#{encoded_range(sheet_name)}?valueInputOption=RAW"
     body = { "range" => quoted_range(sheet_name), "majorDimension" => "ROWS", "values" => rows }
     handle_response(Lexdrill::HTTPClient.json_put(url, body: body, headers: auth_header(access_token)))
+  end
+
+  # Reads column A back out of an existing tab (ignoring any other
+  # columns, e.g. show counts from an older export), skipping blank cells.
+  def self.read_column(spreadsheet_id, sheet_name, access_token)
+    url = "#{BASE_URL}/#{spreadsheet_id}/values/#{encoded_range(sheet_name)}"
+    data = handle_response(Lexdrill::HTTPClient.json_get(url, headers: auth_header(access_token)))
+    data.fetch("values", []).filter_map { |row| row[0]&.strip }.reject(&:empty?)
   end
 
   def self.auth_header(token)

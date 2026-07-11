@@ -572,7 +572,7 @@ RSpec.describe Lexdrill::CLI do
       end
     end
 
-    it "sets the remote spreadsheet from a share url" do
+    it "sets the remote (service account) spreadsheet from a share url" do
       Dir.mktmpdir("lexdrill-cli-remote-spec") do |dir|
         stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
 
@@ -591,7 +591,7 @@ RSpec.describe Lexdrill::CLI do
       expect(exit_code).to eq(1)
     end
 
-    it "reports an invalid url on stderr and returns 1 when no spreadsheet id is found" do
+    it "reports an invalid url on stderr and returns 1 when no spreadsheet id is found for remote" do
       Dir.mktmpdir("lexdrill-cli-remote-invalid-spec") do |dir|
         stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
 
@@ -603,15 +603,47 @@ RSpec.describe Lexdrill::CLI do
       end
     end
 
+    it "sets the oauth spreadsheet from a share url" do
+      Dir.mktmpdir("lexdrill-cli-oauth-spec") do |dir|
+        stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(%w[oauth https://docs.google.com/spreadsheets/d/abc123/edit]).start
+        end.to output(/oauth spreadsheet set: abc123/).to_stdout
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::OauthRemote.spreadsheet_id).to eq("abc123")
+      end
+    end
+
+    it "reports usage on stderr and returns 1 when oauth is given no url" do
+      exit_code = nil
+      expect { exit_code = described_class.new(["oauth"]).start }.to output(/usage/).to_stderr
+      expect(exit_code).to eq(1)
+    end
+
+    it "reports an invalid url on stderr and returns 1 when no spreadsheet id is found" do
+      Dir.mktmpdir("lexdrill-cli-oauth-invalid-spec") do |dir|
+        stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(%w[oauth https://example.com/nope]).start
+        end.to output(/could not find a spreadsheet id/).to_stderr
+        expect(exit_code).to eq(1)
+      end
+    end
+
     it "reports usage on stderr and returns 1 when export is given no sheet name" do
       exit_code = nil
       expect { exit_code = described_class.new(["export"]).start }.to output(/usage/).to_stderr
       expect(exit_code).to eq(1)
     end
 
-    it "reports on stderr and returns 1 when no remote is configured" do
+    it "reports on stderr and returns 1 when no remote/oauth spreadsheet is configured" do
       Dir.mktmpdir("lexdrill-cli-export-no-remote-spec") do |dir|
         stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
+        stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
 
         exit_code = nil
         expect { exit_code = described_class.new(%w[export Sheet1]).start }.to output(/no remote spreadsheet/).to_stderr
@@ -627,8 +659,9 @@ RSpec.describe Lexdrill::CLI do
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
         File.write(Lexdrill::Stats::PATH, JSON.generate("alpha" => 3))
 
-        allow(Lexdrill::Remote).to receive(:configured?).and_return(true)
-        allow(Lexdrill::Remote).to receive(:spreadsheet_id).and_return("sheet-id")
+        allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
+        allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(true)
+        allow(Lexdrill::OauthRemote).to receive(:spreadsheet_id).and_return("sheet-id")
         allow(Lexdrill::GoogleAuth).to receive(:ensure_token!).and_return("tok")
         allow(Lexdrill::SheetsClient).to receive(:overwrite_sheet)
 
@@ -642,8 +675,70 @@ RSpec.describe Lexdrill::CLI do
       end
     end
 
-    it "reports the auth error message on stderr and returns 1" do
+    it "uses the service account (drill remote) when it was configured more recently than oauth" do
+      Dir.mktmpdir("lexdrill-cli-export-precedence-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
+        stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\n")
+        File.write(Lexdrill::OauthRemote::PATH, "oauth-sheet-id")
+        File.write(Lexdrill::Remote::PATH, "service-account-sheet-id")
+        File.utime(Time.now - 10, Time.now - 10, Lexdrill::OauthRemote::PATH)
+
+        allow(Lexdrill::ServiceAccountAuth).to receive(:fetch_token!).and_return("sa-tok")
+        allow(Lexdrill::GoogleAuth).to receive(:ensure_token!)
+        allow(Lexdrill::SheetsClient).to receive(:overwrite_sheet)
+
+        exit_code = described_class.new(%w[export Sheet1]).start
+
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::SheetsClient).to have_received(:overwrite_sheet)
+          .with("service-account-sheet-id", "Sheet1", [["alpha"]], "sa-tok")
+        expect(Lexdrill::GoogleAuth).not_to have_received(:ensure_token!)
+      end
+    end
+
+    it "uses oauth when it was configured more recently than the service account (drill remote)" do
+      Dir.mktmpdir("lexdrill-cli-export-precedence-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
+        stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\n")
+        File.write(Lexdrill::Remote::PATH, "service-account-sheet-id")
+        File.utime(Time.now - 10, Time.now - 10, Lexdrill::Remote::PATH)
+        File.write(Lexdrill::OauthRemote::PATH, "oauth-sheet-id")
+
+        allow(Lexdrill::ServiceAccountAuth).to receive(:fetch_token!)
+        allow(Lexdrill::GoogleAuth).to receive(:ensure_token!).and_return("oauth-tok")
+        allow(Lexdrill::SheetsClient).to receive(:overwrite_sheet)
+
+        exit_code = described_class.new(%w[export Sheet1]).start
+
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::SheetsClient).to have_received(:overwrite_sheet)
+          .with("oauth-sheet-id", "Sheet1", [["alpha"]], "oauth-tok")
+        expect(Lexdrill::ServiceAccountAuth).not_to have_received(:fetch_token!)
+      end
+    end
+
+    it "reports the service-account auth error message on stderr and returns 1" do
       allow(Lexdrill::Remote).to receive(:configured?).and_return(true)
+      allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(false)
+      allow(Lexdrill::ServiceAccountAuth).to receive(:fetch_token!)
+        .and_raise(Lexdrill::ServiceAccountAuth::AuthError, "no service account key found")
+
+      exit_code = nil
+      expect { exit_code = described_class.new(%w[export Sheet1]).start }.to output(/no service account key/).to_stderr
+      expect(exit_code).to eq(1)
+    end
+
+    it "reports the auth error message on stderr and returns 1" do
+      allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
+      allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(true)
       allow(Lexdrill::GoogleAuth).to receive(:ensure_token!)
         .and_raise(Lexdrill::GoogleAuth::AuthError, "access denied")
 
@@ -653,24 +748,103 @@ RSpec.describe Lexdrill::CLI do
     end
 
     it "reports a 404 Sheets API error with a helpful hint" do
-      allow(Lexdrill::Remote).to receive(:configured?).and_return(true)
-      allow(Lexdrill::Remote).to receive(:spreadsheet_id).and_return("sheet-id")
+      allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
+      allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(true)
+      allow(Lexdrill::OauthRemote).to receive(:spreadsheet_id).and_return("sheet-id")
       allow(Lexdrill::GoogleAuth).to receive(:ensure_token!).and_return("tok")
       allow(Lexdrill::SheetsClient).to receive(:overwrite_sheet)
         .and_raise(Lexdrill::SheetsClient::ApiError.new(404, "not found"))
 
       exit_code = nil
-      expect { exit_code = described_class.new(%w[export Sheet1]).start }.to output(/check `drill remote`/).to_stderr
+      expect do
+        exit_code = described_class.new(%w[export Sheet1]).start
+      end.to output(/not found or not accessible/).to_stderr
       expect(exit_code).to eq(1)
     end
 
     it "reports a network error on stderr and returns 1" do
-      allow(Lexdrill::Remote).to receive(:configured?).and_return(true)
+      allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
+      allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(true)
       allow(Lexdrill::GoogleAuth).to receive(:ensure_token!)
         .and_raise(Lexdrill::HTTPClient::NetworkError, "getaddrinfo failed")
 
       exit_code = nil
       expect { exit_code = described_class.new(%w[export Sheet1]).start }.to output(/network error/).to_stderr
+      expect(exit_code).to eq(1)
+    end
+
+    it "reports usage on stderr and returns 1 when import is given no sheet name" do
+      exit_code = nil
+      expect { exit_code = described_class.new(["import"]).start }.to output(/usage/).to_stderr
+      expect(exit_code).to eq(1)
+    end
+
+    it "reports on stderr and returns 1 when no remote/oauth spreadsheet is configured for import" do
+      Dir.mktmpdir("lexdrill-cli-import-no-remote-spec") do |dir|
+        stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
+        stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
+
+        exit_code = nil
+        expect { exit_code = described_class.new(%w[import Sheet1]).start }.to output(/no remote spreadsheet/).to_stderr
+        expect(exit_code).to eq(1)
+      end
+    end
+
+    it "replaces the local word list with column A of the given tab, then returns 0" do
+      Dir.mktmpdir("lexdrill-cli-import-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "old-word\n")
+
+        allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
+        allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(true)
+        allow(Lexdrill::OauthRemote).to receive(:spreadsheet_id).and_return("sheet-id")
+        allow(Lexdrill::GoogleAuth).to receive(:ensure_token!).and_return("tok")
+        allow(Lexdrill::SheetsClient).to receive(:read_column).and_return(%w[alpha beta])
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(%w[import Sheet1]).start
+        end.to output(/imported 2 word\(s\) from "Sheet1"/).to_stdout
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::SheetsClient).to have_received(:read_column).with("sheet-id", "Sheet1", "tok")
+        expect(File.read(Lexdrill::WordList::PATH)).to eq("alpha\nbeta\n")
+      end
+    end
+
+    it "reports on stderr and returns 1 when the sheet has no data to import" do
+      allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
+      allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(true)
+      allow(Lexdrill::OauthRemote).to receive(:spreadsheet_id).and_return("sheet-id")
+      allow(Lexdrill::GoogleAuth).to receive(:ensure_token!).and_return("tok")
+      allow(Lexdrill::SheetsClient).to receive(:read_column).and_return([])
+
+      exit_code = nil
+      expect { exit_code = described_class.new(%w[import Sheet1]).start }.to output(/no data to import/).to_stderr
+      expect(exit_code).to eq(1)
+    end
+
+    it "reports the auth error message on stderr and returns 1 for import" do
+      allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
+      allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(true)
+      allow(Lexdrill::GoogleAuth).to receive(:ensure_token!)
+        .and_raise(Lexdrill::GoogleAuth::AuthError, "access denied")
+
+      exit_code = nil
+      expect { exit_code = described_class.new(%w[import Sheet1]).start }.to output(/access denied/).to_stderr
+      expect(exit_code).to eq(1)
+    end
+
+    it "reports a Sheets API error on stderr and returns 1 for import" do
+      allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
+      allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(true)
+      allow(Lexdrill::OauthRemote).to receive(:spreadsheet_id).and_return("sheet-id")
+      allow(Lexdrill::GoogleAuth).to receive(:ensure_token!).and_return("tok")
+      allow(Lexdrill::SheetsClient).to receive(:read_column)
+        .and_raise(Lexdrill::SheetsClient::ApiError.new(400, "Unable to parse range"))
+
+      exit_code = nil
+      expect { exit_code = described_class.new(%w[import NoSuchTab]).start }.to output(/real tab/).to_stderr
       expect(exit_code).to eq(1)
     end
   end

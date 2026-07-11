@@ -34,6 +34,33 @@ RSpec.describe Lexdrill::SheetsClient do
     end
   end
 
+  describe ".read_column" do
+    it "returns column A values, ignoring any other columns" do
+      allow(Lexdrill::HTTPClient).to receive(:json_get)
+        .and_return(response(200, "values" => [%w[alpha 3], %w[beta 1]]))
+
+      words = described_class.read_column(spreadsheet_id, "Sheet1", token)
+
+      expect(words).to eq(%w[alpha beta])
+      expected_url = "https://sheets.googleapis.com/v4/spreadsheets/abc123/values/%27Sheet1%27"
+      expect(Lexdrill::HTTPClient).to have_received(:json_get)
+        .with(expected_url, headers: { "Authorization" => "Bearer at1" })
+    end
+
+    it "strips whitespace and skips blank cells" do
+      allow(Lexdrill::HTTPClient).to receive(:json_get)
+        .and_return(response(200, "values" => [["  alpha  "], [""], [], ["beta"]]))
+
+      expect(described_class.read_column(spreadsheet_id, "Sheet1", token)).to eq(%w[alpha beta])
+    end
+
+    it "returns an empty array when the tab has no data" do
+      allow(Lexdrill::HTTPClient).to receive(:json_get).and_return(response(200, {}))
+
+      expect(described_class.read_column(spreadsheet_id, "Sheet1", token)).to eq([])
+    end
+  end
+
   describe ".overwrite_sheet" do
     def classify_post(url, body)
       return :clear if url.end_with?(":clear")

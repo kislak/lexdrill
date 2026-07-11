@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
-# Global "which Google Sheet to export to" setting. Lives at ~/.drill.remote
-# as a plain spreadsheet id, parsed out of a normal Google Sheets share URL.
+# Global "which Google Sheet to export to via a service account" setting.
+# Lives at ~/.drill.remote as a plain spreadsheet id, parsed out of a normal
+# Google Sheets share URL. Set via `drill remote <url>` — the user shares
+# that spreadsheet with their service account's email directly in Google
+# Sheets, so no interactive Google sign-in is needed at export/import time.
+# See Lexdrill::OauthRemote for the separate, personal-login-based flow.
 module Lexdrill::Remote
   PATH = File.join(Dir.home, ".drill.remote")
   URL_PATTERN = %r{/spreadsheets/d/([a-zA-Z0-9_-]+)}
