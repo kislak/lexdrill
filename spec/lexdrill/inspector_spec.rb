@@ -16,8 +16,8 @@ RSpec.describe Lexdrill::Inspector do
     stub_const("Lexdrill::Rand::PATH", File.join(@dir, ".drill.rand"))
     stub_const("Lexdrill::Beat::PATH", File.join(@dir, ".drill.beat"))
     stub_const("Lexdrill::Color::PATH", File.join(@dir, ".drill.color"))
-    stub_const("Lexdrill::Remote::PATH", File.join(@dir, ".drill.remote"))
-    stub_const("Lexdrill::OauthRemote::PATH", File.join(@dir, ".drill.oauth-remote"))
+    stub_const("Lexdrill::AuthMode::PATH", File.join(@dir, ".drill.auth-mode"))
+    stub_const("Lexdrill::Workbooks::PATH", File.join(@dir, ".drill.workbooks.json"))
     Lexdrill::WordList.instance_variable_set(:@words, nil)
   end
 
@@ -81,14 +81,31 @@ RSpec.describe Lexdrill::Inspector do
       expect(described_class.report).to include("Color:         random")
     end
 
-    it "reports not configured when no remote is set" do
-      expect(described_class.report).to include("Remote:        not configured")
+    it "reports auth mode, workbook, and sheet as not configured/selected by default" do
+      report = described_class.report
+      expect(report).to include("Auth mode:     not configured")
+      expect(report).to include("Workbook:      not selected")
+      expect(report).to include("Sheet:         not selected")
     end
 
-    it "reports the active spreadsheet URL once a remote is configured" do
-      Lexdrill::Remote.set("https://docs.google.com/spreadsheets/d/abc123/edit")
+    it "reports the auth mode once set" do
+      Lexdrill::AuthMode.set("remote")
 
-      expect(described_class.report).to include("Remote:        https://docs.google.com/spreadsheets/d/abc123/edit")
+      expect(described_class.report).to include("Auth mode:     remote")
+    end
+
+    it "reports the active workbook's name and URL once one is configured" do
+      Lexdrill::Workbooks.add("NLP", "abc123")
+
+      report = described_class.report
+      expect(report).to include("Workbook:      NLP (https://docs.google.com/spreadsheets/d/abc123/edit)")
+    end
+
+    it "reports the active sheet once one is selected" do
+      Lexdrill::Workbooks.add("NLP", "abc123")
+      Lexdrill::Workbooks.set_current_sheet("Sheet1", 0)
+
+      expect(described_class.report).to include("Sheet:         Sheet1")
     end
 
     it "reports the config directory" do

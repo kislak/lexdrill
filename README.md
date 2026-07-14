@@ -176,31 +176,36 @@ the default, so it's also the way to undo `random`).
 
 ### Google Sheets export
 
-`drill export <sheet-name>` mirrors your word list (text only, no stats)
-into a tab of a Google Sheet you own; `drill import <sheet-name>` reads it
-back. There are two ways to authenticate — pick whichever you prefer:
+lexdrill can mirror your word list to a tab in a Google Sheet, and pull it
+back. Three independent layers, each a one-time setup:
 
-- **`drill remote <url>`** — a **service account** you create yourself. No
-  interactive sign-in, ever; you share the spreadsheet with the service
+1. **Auth mode** (`drill remote` / `drill oauth`, no arguments) — *how*
+   you authenticate to Google. A single global choice.
+2. **Workbooks** (`drill wb ...`) — *which* spreadsheets lexdrill knows
+   about, and which one is currently active. You can add as many as you
+   like.
+3. **Sheets** (`drill sh ...`) — *which tab*, within the active workbook,
+   is currently active.
+
+Once all three are set, `drill push`/`drill pull` (no arguments) act on
+whichever workbook + tab are currently active — and `drill add <text>`
+automatically pushes the updated list too, so your local list and the
+sheet stay in sync as you go.
+
+#### Step 1: choose an auth mode
+
+- **`drill remote`** — a **service account** you create yourself. No
+  interactive sign-in, ever; you share each spreadsheet with the service
   account's email address once, and `drill` uses a local private key file
   to sign its own requests.
-- **`drill oauth <url>`** — your **personal Google login**, via a one-time
+- **`drill oauth`** — your **personal Google login**, via a one-time
   interactive OAuth approval. No GCP service account needed, but you (or
   anyone using the gem) has to click through a sign-in flow once.
 
-If both are configured, whichever you set **more recently** wins — running
-`drill oauth <url>` after `drill remote <url>` switches `export`/`import`
-over to the personal-login flow, and vice versa.
+Whichever you pick applies to every workbook — it's one global setting,
+independent of which spreadsheet is active.
 
-Either way, `export` always **overwrites** the named tab (creating it
-first if it doesn't exist yet) with the current word list, one phrase per
-row, so it stays an exact mirror even if the list shrinks. `import` is the
-reverse: it reads column A of the tab (ignoring any other columns, like an
-old export's show counts) and **replaces** your local `~/.drill/words` —
-useful for editing the list in Sheets and pulling changes back down, or
-seeding a fresh machine from an existing sheet.
-
-#### Option A: service account (`drill remote`)
+##### Option A: service account (`drill remote`)
 
 No embedded secret, no interactive consent screen — but it does require a
 one-time Google Cloud Console setup, and the resulting private key file is
@@ -211,7 +216,7 @@ a real secret you must keep local.
    **Google Sheets API** is enabled (**APIs & Services → Library**).
 2. **IAM & Admin → Service Accounts → "+ CREATE SERVICE ACCOUNT"**. Name it
    anything (e.g. `lexdrill-export`); skip granting it any project-level
-   roles — it doesn't need any, since access comes from sharing the
+   roles — it doesn't need any, since access comes from sharing each
    document directly.
 3. Click into the new service account → **Keys → Add Key → Create new key
    → JSON → Create**. This downloads a `.json` file — **this is a real
@@ -219,22 +224,21 @@ a real secret you must keep local.
    share it with anyone.
 4. Note the service account's email (looks like
    `name@your-project-id.iam.gserviceaccount.com` — also the `client_email`
-   field in the downloaded JSON).
-5. Open your target Google Sheet → **Share** → paste that email → grant
-   **Editor** access → uncheck "Notify people" → Share.
-6. Save the downloaded key file to `~/.drill/gcp-service-account.json` on
+   field in the downloaded JSON). Share each spreadsheet you want lexdrill
+   to use with this email (**Share** → paste it → grant **Editor** access
+   → uncheck "Notify people" → Share).
+5. Save the downloaded key file to `~/.drill/gcp-service-account.json` on
    your machine (`drill` reads it from that fixed path; it's never embedded
    in the gem or committed anywhere).
 
 ```bash
-drill remote 'https://docs.google.com/spreadsheets/d/1opBP4APL5SUvepm9qwjIYRNtDZdoY1Ee87F5PWdxaMg/edit?usp=sharing'
-drill export Sheet1
+drill remote
 ```
 
 No sign-in prompt — every call authenticates silently by signing a fresh,
 short-lived JWT with the local key file.
 
-#### Option B: personal login (`drill oauth`)
+##### Option B: personal login (`drill oauth`)
 
 Uses the OAuth 2.0 **Device Authorization Grant** ("visit this URL, enter
 this code," the same style of flow `gcloud auth login` uses) — you approve
@@ -258,21 +262,69 @@ personal refresh token, generated only after you interactively approve.
    URI needed). Copy the generated Client ID and Client secret into
    `CLIENT_ID`/`CLIENT_SECRET` in `lib/lexdrill/google_auth.rb`.
 4. "Testing" publishing status has historically imposed a 7-day
-   refresh-token expiry for some scopes. If `drill export` starts asking
+   refresh-token expiry for some scopes. If `drill push` starts asking
    you to re-authorize every week, switch the consent screen to **"In
    production"** — for the `spreadsheets` scope (not a "restricted" scope)
    this just adds an "unverified app" click-through on first consent, no
    Google review required.
 
 ```bash
-drill oauth 'https://docs.google.com/spreadsheets/d/1opBP4APL5SUvepm9qwjIYRNtDZdoY1Ee87F5PWdxaMg/edit?usp=sharing'
-drill export Sheet1
+drill oauth
 ```
 
-The first `export`/`import` prints a URL and a short code — visit it, sign
-in with the Google account that has edit access to that spreadsheet, and
-approve. Every call after that is silent (the cached token refreshes
-itself automatically).
+The first call that needs a token prints a URL and a short code — visit
+it, sign in with the Google account that has edit access to your
+spreadsheets, and approve. Every call after that is silent (the cached
+token refreshes itself automatically).
+
+#### Step 2: add and switch between workbooks
+
+```bash
+drill wb add 'https://docs.google.com/spreadsheets/d/1opBP4APL5SUvepm9qwjIYRNtDZdoY1Ee87F5PWdxaMg/edit'
+drill wb
+```
+
+`drill wb add <url>` fetches the spreadsheet's own title via the API and
+uses that as its name — no need to type one. The very first workbook you
+add becomes active automatically; adding more doesn't switch you away
+from whichever is currently active. `drill wb` (or `drill wb index`, same
+thing) lists every known workbook, marking the active one with the drill
+sign (⟳); `drill wb use <name>` switches; `drill wb remove <name>` forgets
+one.
+
+#### Step 3: add and switch between tabs
+
+```bash
+drill sh
+drill sh use Sheet1
+```
+
+`drill sh` (or `drill sh index`) lists the tabs in the active workbook,
+marking the active one with the drill sign (⟳). `drill sh use <name>`
+switches to a tab **and immediately pulls it** — replacing your local
+word list with that tab's column A. `drill sh add <name>` creates a new,
+empty tab (and makes it active if no tab was selected yet); `drill sh
+remove <name>` deletes one — this is
+real and permanent, so double-check the name.
+
+#### Staying in sync
+
+Once a workbook and tab are both active:
+
+```bash
+drill push   # overwrite the active tab with your current word list
+drill pull   # replace your word list with the active tab's column A
+drill add some new phrase   # appends locally, then pushes automatically
+drill open   # opens the active tab in your browser
+```
+
+`push` always **overwrites** the active tab with the current word list,
+one phrase per row, so it stays an exact mirror even if the list shrinks.
+`pull` is the reverse: it reads column A (ignoring any other columns,
+like an old push's show counts) and **replaces** your local
+`~/.drill/words`. `drill add` never fails because of a sync problem —
+if the push fails (no network, tab renamed, etc.) it just warns on
+stderr; the word is still added locally either way.
 
 ### Commands
 
@@ -280,20 +332,20 @@ itself automatically).
 |---|---|
 | `drill next` | Print the current word and advance |
 | `drill start` / `drill stop` | Pause/resume the automatic per-prompt hook (doesn't affect manual `next`) |
-| `drill inspect` | Show the active config directory, word count, counter value, toggle, beat, rand, color, and remote state |
+| `drill inspect` | Show the active config directory, word count, counter value, toggle, beat, rand, color, auth mode, workbook, and sheet state |
 | `drill hook zsh\|bash` | Print the shell integration snippet (used above) |
 | `drill beat <2-8> <repetitions>` / `drill beat none` | Set or disable the rhythm |
 | `drill polka\|waltz\|rock\|jazz\|jiga\|balkan\|samba <repetitions>` | Shorthand for a fixed loop size (see table above) |
 | `drill color random\|default` | Color each shown word randomly, or by its show count (`default`) |
-| `drill add <text>` | Append a new item to the end of the list |
+| `drill add <text>` | Append a new item to the end of the list; also pushes to the active tab, if one is selected |
 | `drill list` | Show how many times each item has been shown, numbered |
-| `drill open` | Open the list file in `$EDITOR`/`$VISUAL` (falls back to `vi`) |
+| `drill edit` | Open the list file in `$EDITOR`/`$VISUAL` (falls back to `vi`) |
 | `drill stats` | Print all items as `<count>\t<phrase>` (tab-separated), sorted by show count, highest first |
 | `drill rand <n>` | `drill next` shows a word ~1-in-`n` times (`n=1` is every time, the default) |
 | `drill go <number>` | Jump so the next `drill next` shows item `<number>` (1-based, see `drill list`) — prints nothing itself; refuses a graduated item; has no effect while `drill beat rand` is active, since that mode ignores the counter entirely |
-| `drill remote <url>` | Set the Google Sheet used by the service account flow (global, parses the spreadsheet id out of a normal share URL); whichever of `drill remote`/`drill oauth` was set more recently wins |
-| `drill oauth <url>` | Set the Google Sheet used by the OAuth (personal-login) flow (global, parses the spreadsheet id out of a normal share URL); whichever of `drill remote`/`drill oauth` was set more recently wins |
-| `drill wb` | Print a link to whichever workbook (spreadsheet) is currently active (`drill remote`/`drill oauth`) |
-| `drill sheets` | List the tab names in the currently active workbook |
-| `drill export <sheet-name>` | Export the word list text to the named tab (created if it doesn't exist), overwriting it; uses whichever of `drill remote`/`drill oauth` was configured most recently (first OAuth use triggers a one-time Google device-flow sign-in) |
-| `drill import <sheet-name>` | Replace the local word list with column A of the named tab |
+| `drill remote` / `drill oauth` | Choose the Google Sheets auth mode: local service account key, or personal OAuth login (global, applies to every workbook) |
+| `drill wb` / `wb index` / `add <url>` / `remove <name>` / `use <name>` | List (bare `drill wb` is an alias for `wb index`)/add/forget/switch known workbooks; `add` names the workbook after the spreadsheet's own title; the active one is marked with the drill sign |
+| `drill sh` / `sh index` / `add <name>` / `remove <name>` / `use <name>` | List (bare `drill sh` is an alias for `sh index`)/create/delete/switch tabs in the active workbook; `use` also pulls the tab's contents; the active one is marked with the drill sign |
+| `drill open` | Open the active tab in your default browser |
+| `drill push` | Overwrite the active tab with the current word list text |
+| `drill pull` | Replace the local word list with column A of the active tab |

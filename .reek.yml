@@ -14,14 +14,22 @@ detectors:
       - "Lexdrill::CLI#colored_line"
       - "Lexdrill::CLI#set_rand_beat"
       - "Lexdrill::CLI#jump_to"
-      - "Lexdrill::CLI#export_rows"
-      - "Lexdrill::CLI#sheets_target"
+      - "Lexdrill::CLI#push_rows"
+      - "Lexdrill::CLI#current_token"
+      - "Lexdrill::CLI#current_marker"
   TooManyMethods:
     exclude:
       - "Lexdrill::CLI"
   RepeatedConditional:
     exclude:
       - "Lexdrill::CLI"
+  ControlParameter:
+    exclude:
+      - "Lexdrill::CLI#current_marker"
+  NilCheck:
+    exclude:
+      - "Lexdrill::CLI#run_wb"
+      - "Lexdrill::CLI#run_sh"
   TooManyStatements:
     exclude:
       - "Lexdrill::Beat#self.locate"
@@ -29,13 +37,20 @@ detectors:
       - "Lexdrill::CLI#run_list"
       - "Lexdrill::CLI#run_stats"
       - "Lexdrill::CLI#run_go"
-      - "Lexdrill::CLI#run_oauth"
-      - "Lexdrill::CLI#run_remote"
-      - "Lexdrill::CLI#run_export"
-      - "Lexdrill::CLI#run_import"
-      - "Lexdrill::CLI#run_sheets"
-      - "Lexdrill::CLI#perform_import"
+      - "Lexdrill::CLI#run_push"
+      - "Lexdrill::CLI#run_pull"
+      - "Lexdrill::CLI#perform_pull"
       - "Lexdrill::CLI#print_sheets_api_error"
+      - "Lexdrill::CLI#push_after_add"
+      - "Lexdrill::CLI#run_open"
+      - "Lexdrill::CLI#run_wb_index"
+      - "Lexdrill::CLI#run_wb_add"
+      - "Lexdrill::CLI#add_workbook"
+      - "Lexdrill::CLI#run_sh_index"
+      - "Lexdrill::CLI#run_sh_add"
+      - "Lexdrill::CLI#run_sh_remove"
+      - "Lexdrill::CLI#run_sh_use"
+      - "Lexdrill::Workbooks#self.set_current_sheet"
       - "Lexdrill::Colorizer#self.gradient_code"
       - "Lexdrill::Inspector#self.words_summary"
       - "Lexdrill::WordList#self.next"
@@ -49,12 +64,19 @@ detectors:
       - "Lexdrill::GoogleAuth"
   DuplicateMethodCall:
     exclude:
-      - "Lexdrill::CLI#run_export"
-      - "Lexdrill::CLI#run_import"
-      - "Lexdrill::CLI#run_sheets"
+      - "Lexdrill::CLI#run_push"
+      - "Lexdrill::CLI#run_pull"
+      - "Lexdrill::CLI#run_wb_add"
+      - "Lexdrill::CLI#run_sh_index"
+      - "Lexdrill::CLI#run_sh_add"
+      - "Lexdrill::CLI#run_sh_remove"
+      - "Lexdrill::CLI#run_sh_use"
   FeatureEnvy:
     exclude:
-      - "Lexdrill::CLI#perform_import"
+      - "Lexdrill::CLI#perform_pull"
+  DataClump:
+    exclude:
+      - "Lexdrill::CLI"
   LongParameterList:
     exclude:
       - "Lexdrill::HTTPClient#self.json_request"

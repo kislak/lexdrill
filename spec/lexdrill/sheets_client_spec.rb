@@ -84,6 +84,66 @@ RSpec.describe Lexdrill::SheetsClient do
     end
   end
 
+  describe ".spreadsheet_title" do
+    it "returns the workbook's own title" do
+      allow(Lexdrill::HTTPClient).to receive(:json_get).and_return(response(200, "properties" => { "title" => "NLP" }))
+
+      title = described_class.spreadsheet_title(spreadsheet_id, token)
+
+      expect(title).to eq("NLP")
+      expected_url = "https://sheets.googleapis.com/v4/spreadsheets/abc123?fields=properties.title"
+      expect(Lexdrill::HTTPClient).to have_received(:json_get)
+        .with(expected_url, headers: { "Authorization" => "Bearer at1" })
+    end
+  end
+
+  describe ".find_sheet_id" do
+    it "returns the sheetId for a tab matching the given title" do
+      allow(Lexdrill::HTTPClient).to receive(:json_get)
+        .and_return(response(200, "sheets" => [{ "properties" => { "title" => "Sheet1", "sheetId" => 42 } }]))
+
+      expect(described_class.find_sheet_id(spreadsheet_id, "Sheet1", token)).to eq(42)
+    end
+
+    it "returns nil when no tab matches" do
+      allow(Lexdrill::HTTPClient).to receive(:json_get)
+        .and_return(response(200, "sheets" => [{ "properties" => { "title" => "Sheet1", "sheetId" => 42 } }]))
+
+      expect(described_class.find_sheet_id(spreadsheet_id, "NoSuchTab", token)).to be_nil
+    end
+  end
+
+  describe ".add_sheet" do
+    it "creates a new tab and returns its sheetId" do
+      allow(Lexdrill::HTTPClient).to receive(:json_post).and_return(
+        response(200, "replies" => [{ "addSheet" => { "properties" => { "sheetId" => 7, "title" => "NewTab" } } }])
+      )
+
+      sheet_id = described_class.add_sheet(spreadsheet_id, "NewTab", token)
+
+      expect(sheet_id).to eq(7)
+      expect(Lexdrill::HTTPClient).to have_received(:json_post).with(
+        "https://sheets.googleapis.com/v4/spreadsheets/abc123:batchUpdate",
+        body: { "requests" => [{ "addSheet" => { "properties" => { "title" => "NewTab" } } }] },
+        headers: { "Authorization" => "Bearer at1" }
+      )
+    end
+  end
+
+  describe ".delete_sheet" do
+    it "issues a deleteSheet batchUpdate request for the given sheetId" do
+      allow(Lexdrill::HTTPClient).to receive(:json_post).and_return(response(200, {}))
+
+      described_class.delete_sheet(spreadsheet_id, 7, token)
+
+      expect(Lexdrill::HTTPClient).to have_received(:json_post).with(
+        "https://sheets.googleapis.com/v4/spreadsheets/abc123:batchUpdate",
+        body: { "requests" => [{ "deleteSheet" => { "sheetId" => 7 } }] },
+        headers: { "Authorization" => "Bearer at1" }
+      )
+    end
+  end
+
   describe ".overwrite_sheet" do
     def classify_post(url, body)
       return :clear if url.end_with?(":clear")

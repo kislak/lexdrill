@@ -15,13 +15,18 @@ module Lexdrill::Inspector
       Beat:          #{beat_summary}
       Rand:          #{rand_summary}
       Color:         #{Lexdrill::Color.current}
-      Remote:        #{remote_summary}
+      Auth mode:     #{Lexdrill::AuthMode.current || 'not configured'}
+      Workbook:      #{workbook_summary}
+      Sheet:         #{Lexdrill::Workbooks.current_sheet || 'not selected'}
       Config dir:    #{Lexdrill::Config::DIR}
     REPORT
   end
 
-  def self.remote_summary
-    Lexdrill::RemoteTarget.url || "not configured"
+  def self.workbook_summary
+    name = Lexdrill::Workbooks.current_name
+    return "not selected" unless name
+
+    "#{name} (#{Lexdrill::Workbooks.current_url})"
   end
 
   def self.words_summary

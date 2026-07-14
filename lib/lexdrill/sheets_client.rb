@@ -4,10 +4,12 @@ require "uri"
 require "json"
 
 # Thin wrapper around the Google Sheets API v4 REST endpoints needed by
-# `drill export`/`drill import`: create the target tab if it doesn't already
+# `drill push`/`drill pull`: create the target tab if it doesn't already
 # exist, clear its contents, write new rows into it, then auto-fit column
 # A's width to the content so long phrases aren't visually truncated; or,
-# for import, read column A back out of an existing tab.
+# for pull, read column A back out of an existing tab. Also covers
+# workbook/tab management for `drill wb`/`drill sh`: the workbook's title,
+# the list of tab titles, and creating/deleting a tab.
 module Lexdrill::SheetsClient
   BASE_URL = "https://sheets.googleapis.com/v4/spreadsheets"
 
@@ -42,13 +44,27 @@ module Lexdrill::SheetsClient
   end
   private_class_method :find_sheet
 
+  # The sheetId for a tab by title, or nil if no tab has that title —
+  # for `drill sh use`/`drill sh remove`, which need the numeric id (not
+  # just the name) to build a direct link or issue a delete request.
+  def self.find_sheet_id(spreadsheet_id, sheet_name, access_token)
+    find_sheet(spreadsheet_id, sheet_name, access_token)&.[]("sheetId")
+  end
+
+  # Creates a new, empty tab, for `drill sh add`. Returns its sheetId.
   def self.add_sheet(spreadsheet_id, sheet_name, access_token)
     url = "#{BASE_URL}/#{spreadsheet_id}:batchUpdate"
     body = { "requests" => [{ "addSheet" => { "properties" => { "title" => sheet_name } } }] }
     result = handle_response(Lexdrill::HTTPClient.json_post(url, body: body, headers: auth_header(access_token)))
     result.dig("replies", 0, "addSheet", "properties", "sheetId")
   end
-  private_class_method :add_sheet
+
+  # Deletes a tab by its numeric sheetId, for `drill sh remove`.
+  def self.delete_sheet(spreadsheet_id, sheet_id, access_token)
+    url = "#{BASE_URL}/#{spreadsheet_id}:batchUpdate"
+    body = { "requests" => [{ "deleteSheet" => { "sheetId" => sheet_id } }] }
+    handle_response(Lexdrill::HTTPClient.json_post(url, body: body, headers: auth_header(access_token)))
+  end
 
   def self.autofit_first_column(spreadsheet_id, sheet_id, access_token)
     url = "#{BASE_URL}/#{spreadsheet_id}:batchUpdate"
@@ -77,11 +93,18 @@ module Lexdrill::SheetsClient
     data.fetch("values", []).filter_map { |row| row[0]&.strip }.reject(&:empty?)
   end
 
-  # The titles of every tab in the workbook, for `drill sheets`.
+  # The titles of every tab in the workbook, for `drill sh index`.
   def self.sheet_titles(spreadsheet_id, access_token)
     url = "#{BASE_URL}/#{spreadsheet_id}?fields=sheets.properties.title"
     data = handle_response(Lexdrill::HTTPClient.json_get(url, headers: auth_header(access_token)))
     data.fetch("sheets", []).map { |sheet| sheet.dig("properties", "title") }
+  end
+
+  # The workbook's own title, for naming it automatically in `drill wb add`.
+  def self.spreadsheet_title(spreadsheet_id, access_token)
+    url = "#{BASE_URL}/#{spreadsheet_id}?fields=properties.title"
+    data = handle_response(Lexdrill::HTTPClient.json_get(url, headers: auth_header(access_token)))
+    data.dig("properties", "title")
   end
 
   def self.auth_header(token)

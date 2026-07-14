@@ -19,14 +19,18 @@ Naming/RescuedExceptionsVariableName:
   PreferredName: error
 
 Metrics/MethodLength:
-  Max: 33
+  Max: 40
   Exclude:
     - "spec/**/*"
 
 Metrics/ClassLength:
-  Max: 385
+  Max: 600
   Exclude:
     - "spec/**/*"
+
+Naming/PredicateMethod:
+  Exclude:
+    - "lib/lexdrill/workbooks.rb"
 
 Metrics/ModuleLength:
   Max: 120

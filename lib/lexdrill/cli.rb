@@ -14,16 +14,17 @@ class Lexdrill::CLI
     run_color: %w[color],
     run_add: %w[add],
     run_list: %w[list],
-    run_open: %w[open],
+    run_edit: %w[edit],
     run_stats: %w[stats],
     run_rand: %w[rand],
     run_go: %w[go],
     run_remote: %w[remote],
     run_oauth: %w[oauth],
     run_wb: %w[wb],
-    run_sheets: %w[sheets],
-    run_export: %w[export],
-    run_import: %w[import]
+    run_sh: %w[sh],
+    run_open: %w[open],
+    run_push: %w[push],
+    run_pull: %w[pull]
   }.freeze
 
   def self.start(argv = ARGV)
@@ -69,21 +70,28 @@ class Lexdrill::CLI
         drill polka|waltz|rock|jazz|jiga|balkan|samba [repetitions]
                         Shorthand for a fixed loop size (2 through 8, in order)
         drill color random|default   Color each word randomly, or by its show count (default)
-        drill add <text>   Append a new item to the end of the list
+        drill add <text>   Append a new item to the list (and push, if a sheet is selected)
         drill list         Show how many times each item has been shown
-        drill open         Open the list file in $EDITOR/$VISUAL (falls back to vi)
+        drill edit         Open the list file in $EDITOR/$VISUAL (falls back to vi)
         drill stats        Print items as <count>\t<phrase>, tab-separated, highest count first
         drill rand <n>     drill next shows a word ~1-in-n times (n=1 is every time)
         drill go <number>  Jump so the next `next` shows item <number> (1-based, see drill list)
-        drill remote <url>          Set the Google Sheet used by a local service account key
+        drill remote                Use a local service account key for Google Sheets auth
                                     (~/.drill/gcp-service-account.json) — no interactive sign-in
-        drill oauth <url>           Set the Google Sheet used by the OAuth (personal-login) flow
-        drill wb                    Print a link to the currently active workbook (spreadsheet)
-        drill sheets                List the tab names in the currently active workbook
-        drill export <sheet-name>   Export the word list text to the given tab (overwrites its
-                                    contents); uses whichever of drill remote/drill oauth was set
-                                    more recently (oauth opens a one-time sign-in on first use)
-        drill import <sheet-name>   Replace the local word list with column A of the given tab
+        drill oauth                  Use your personal Google login for Google Sheets auth
+        drill wb                     Alias for drill wb index
+        drill wb index               List known workbooks (name and URL)
+        drill wb add <url>           Add a workbook by URL (named after its own title)
+        drill wb remove <name>       Forget a workbook
+        drill wb use <name>          Switch the active workbook
+        drill sh                     Alias for drill sh index
+        drill sh index               List the tabs in the active workbook
+        drill sh add <name>          Create a new tab
+        drill sh remove <name>       Delete a tab
+        drill sh use <name>          Switch the active tab (pulls its contents)
+        drill open                   Open the active tab in your browser
+        drill push                   Push the word list text to the active tab (overwrites it)
+        drill pull                   Replace the local word list with the active tab's column A
     HELP
     0
   end
@@ -216,13 +224,32 @@ class Lexdrill::CLI
     1
   end
 
+  # Appends locally, then opportunistically pushes the updated list to the
+  # active tab if one is selected — a failed push is reported but doesn't
+  # change the exit code, since the local add always succeeds regardless.
   def run_add
     text = argv[1..].join(" ")
     return print_add_usage if text.empty?
 
     File.open(Lexdrill::WordList::PATH, "a", encoding: "UTF-8") { |file| file.puts(text) }
     puts "added: #{text}"
+    push_after_add
     0
+  end
+
+  def push_after_add
+    spreadsheet_id = Lexdrill::Workbooks.current_id
+    sheet_name = Lexdrill::Workbooks.current_sheet
+    return unless spreadsheet_id && sheet_name
+
+    token = current_token
+    return unless token
+
+    Lexdrill::WordList.instance_variable_set(:@words, nil)
+    perform_push(spreadsheet_id, sheet_name, token)
+  rescue Lexdrill::GoogleAuth::AuthError, Lexdrill::ServiceAccountAuth::AuthError,
+         Lexdrill::SheetsClient::ApiError, Lexdrill::HTTPClient::NetworkError => error
+    warn "drill: added locally, but couldn't push to #{sheet_name.inspect}: #{error.message}"
   end
 
   def print_add_usage
@@ -239,7 +266,7 @@ class Lexdrill::CLI
     0
   end
 
-  def run_open
+  def run_edit
     editor_cmd = (ENV["VISUAL"] || ENV["EDITOR"] || "vi").split
     system(*editor_cmd, Lexdrill::WordList::PATH) ? 0 : 1
   end
@@ -299,74 +326,72 @@ class Lexdrill::CLI
   end
 
   def run_remote
-    url = argv[1]
-    return print_remote_usage unless url
-
-    Lexdrill::Remote.set(url)
-    puts "remote spreadsheet set: #{Lexdrill::Remote.spreadsheet_id}"
+    Lexdrill::AuthMode.set(Lexdrill::AuthMode::REMOTE)
+    puts "auth mode set: remote (service account)"
     0
-  rescue ArgumentError
-    print_invalid_remote_url(url)
-  end
-
-  def print_remote_usage
-    warn "usage: drill remote <google-sheets-url>"
-    1
-  end
-
-  def print_invalid_remote_url(url)
-    warn "drill: could not find a spreadsheet id in #{url.inspect}"
-    1
   end
 
   def run_oauth
-    url = argv[1]
-    return print_oauth_usage unless url
-
-    Lexdrill::OauthRemote.set(url)
-    puts "oauth spreadsheet set: #{Lexdrill::OauthRemote.spreadsheet_id}"
+    Lexdrill::AuthMode.set(Lexdrill::AuthMode::OAUTH)
+    puts "auth mode set: oauth (personal login)"
     0
-  rescue ArgumentError
-    print_invalid_oauth_url(url)
   end
 
-  def print_oauth_usage
-    warn "usage: drill oauth <google-sheets-url>"
+  def current_token
+    case Lexdrill::AuthMode.current
+    when Lexdrill::AuthMode::REMOTE then Lexdrill::ServiceAccountAuth.fetch_token!
+    when Lexdrill::AuthMode::OAUTH then Lexdrill::GoogleAuth.ensure_token!
+    end
+  end
+
+  def print_no_auth_mode
+    warn "drill: no auth mode configured; run `drill remote` (service account) or `drill oauth` (personal login) first"
     1
-  end
-
-  def print_invalid_oauth_url(url)
-    warn "drill: could not find a spreadsheet id in #{url.inspect}"
-    1
-  end
-
-  # Uses whichever of `drill remote` (service account) / `drill oauth`
-  # (personal login) was set more recently, so switching between them with
-  # either command always takes effect. Returns [spreadsheet_id,
-  # access_token], or nil if neither is configured.
-  def sheets_target
-    kind = Lexdrill::RemoteTarget.kind
-    spreadsheet_id = Lexdrill::RemoteTarget.spreadsheet_id
-    return unless spreadsheet_id
-
-    [spreadsheet_id, kind == :remote ? Lexdrill::ServiceAccountAuth.fetch_token! : Lexdrill::GoogleAuth.ensure_token!]
   end
 
   def run_wb
-    url = Lexdrill::RemoteTarget.url
-    return print_no_remote unless url
+    case argv[1]
+    when nil, "index" then run_wb_index
+    when "add" then run_wb_add
+    when "remove" then run_wb_remove
+    when "use" then run_wb_use
+    else print_wb_usage
+    end
+  end
 
-    puts url
+  def print_wb_usage
+    warn "usage: drill wb index|add <url>|remove <name>|use <name>"
+    1
+  end
+
+  def run_wb_index
+    names = Lexdrill::Workbooks.names
+    return print_no_workbooks if names.empty?
+
+    current = Lexdrill::Workbooks.current_name
+    names.each { |name| puts "#{current_marker(name == current)} #{name}  #{Lexdrill::Workbooks.url_for(name)}" }
     0
   end
 
-  def run_sheets
-    target = sheets_target
-    return print_no_remote unless target
+  # A painted drill sign for the current item, or a blank space otherwise —
+  # used by `drill wb`/`drill sh` to mark the active workbook/sheet.
+  def current_marker(is_current)
+    is_current ? Lexdrill::Colorizer.paint_yellow(Lexdrill::LineFormatter::SEPARATOR) : " "
+  end
 
-    spreadsheet_id, token = target
-    Lexdrill::SheetsClient.sheet_titles(spreadsheet_id, token).each { |title| puts title }
-    0
+  def print_no_workbooks
+    warn "drill: no workbooks configured; run `drill wb add <url>`"
+    1
+  end
+
+  def run_wb_add
+    url = argv[2]
+    return print_wb_add_usage unless url
+
+    spreadsheet_id = Lexdrill::Workbooks.extract_id(url)
+    return print_invalid_wb_url(url) unless spreadsheet_id
+
+    add_workbook(spreadsheet_id)
   rescue Lexdrill::GoogleAuth::AuthError, Lexdrill::ServiceAccountAuth::AuthError => error
     warn "drill: #{error.message}"
     1
@@ -377,14 +402,244 @@ class Lexdrill::CLI
     1
   end
 
-  def run_export
-    sheet_name = argv[1]
-    return print_export_usage unless sheet_name
+  def add_workbook(spreadsheet_id)
+    token = current_token
+    return print_no_auth_mode unless token
 
-    target = sheets_target
-    return print_no_remote unless target
+    title = Lexdrill::SheetsClient.spreadsheet_title(spreadsheet_id, token)
+    return print_wb_name_taken(title) if Lexdrill::Workbooks.names.include?(title)
 
-    perform_export(sheet_name, *target)
+    Lexdrill::Workbooks.add(title, spreadsheet_id)
+    puts "workbook added: #{title.inspect}"
+    0
+  end
+
+  def print_wb_add_usage
+    warn "usage: drill wb add <url>"
+    1
+  end
+
+  def print_invalid_wb_url(url)
+    warn "drill: could not find a spreadsheet id in #{url.inspect}"
+    1
+  end
+
+  def print_wb_name_taken(title)
+    warn "drill: a workbook named #{title.inspect} is already configured"
+    1
+  end
+
+  def run_wb_remove
+    name = argv[2]
+    return print_wb_remove_usage unless name
+    return print_no_such_workbook(name) unless Lexdrill::Workbooks.remove(name)
+
+    puts "workbook removed: #{name.inspect}"
+    0
+  end
+
+  def print_wb_remove_usage
+    warn "usage: drill wb remove <name>"
+    1
+  end
+
+  def print_no_such_workbook(name)
+    warn "drill: no workbook named #{name.inspect} (see `drill wb index`)"
+    1
+  end
+
+  def run_wb_use
+    name = argv[2]
+    return print_wb_use_usage unless name
+    return print_no_such_workbook(name) unless Lexdrill::Workbooks.use(name)
+
+    puts "workbook set: #{name.inspect}"
+    0
+  end
+
+  def print_wb_use_usage
+    warn "usage: drill wb use <name>"
+    1
+  end
+
+  def run_sh
+    case argv[1]
+    when nil, "index" then run_sh_index
+    when "add" then run_sh_add
+    when "remove" then run_sh_remove
+    when "use" then run_sh_use
+    else print_sh_usage
+    end
+  end
+
+  def print_sh_usage
+    warn "usage: drill sh index|add <name>|remove <name>|use <name>"
+    1
+  end
+
+  def print_no_workbook_selected
+    warn "drill: no workbook selected; run `drill wb add <url>` or `drill wb use <name>` first"
+    1
+  end
+
+  def run_sh_index
+    spreadsheet_id = Lexdrill::Workbooks.current_id
+    return print_no_workbook_selected unless spreadsheet_id
+
+    token = current_token
+    return print_no_auth_mode unless token
+
+    list_sheets(spreadsheet_id, token)
+  rescue Lexdrill::GoogleAuth::AuthError, Lexdrill::ServiceAccountAuth::AuthError => error
+    warn "drill: #{error.message}"
+    1
+  rescue Lexdrill::SheetsClient::ApiError => error
+    print_sheets_api_error(error)
+  rescue Lexdrill::HTTPClient::NetworkError => error
+    warn "drill: network error talking to Google (#{error.message})"
+    1
+  end
+
+  def list_sheets(spreadsheet_id, token)
+    current = Lexdrill::Workbooks.current_sheet
+    Lexdrill::SheetsClient.sheet_titles(spreadsheet_id, token).each do |title|
+      puts "#{current_marker(title == current)} #{title}"
+    end
+    0
+  end
+
+  def run_sh_add
+    name = argv[2]
+    return print_sh_add_usage unless name
+
+    spreadsheet_id = Lexdrill::Workbooks.current_id
+    return print_no_workbook_selected unless spreadsheet_id
+
+    token = current_token
+    return print_no_auth_mode unless token
+
+    add_sheet(spreadsheet_id, name, token)
+  rescue Lexdrill::GoogleAuth::AuthError, Lexdrill::ServiceAccountAuth::AuthError => error
+    warn "drill: #{error.message}"
+    1
+  rescue Lexdrill::SheetsClient::ApiError => error
+    print_sheets_api_error(error, name)
+  rescue Lexdrill::HTTPClient::NetworkError => error
+    warn "drill: network error talking to Google (#{error.message})"
+    1
+  end
+
+  def add_sheet(spreadsheet_id, name, token)
+    sheet_id = Lexdrill::SheetsClient.add_sheet(spreadsheet_id, name, token)
+    Lexdrill::Workbooks.set_current_sheet(name, sheet_id) unless Lexdrill::Workbooks.current_sheet
+    puts "sheet added: #{name.inspect}"
+    0
+  end
+
+  def print_sh_add_usage
+    warn "usage: drill sh add <name>"
+    1
+  end
+
+  def run_sh_remove
+    name = argv[2]
+    return print_sh_remove_usage unless name
+
+    spreadsheet_id = Lexdrill::Workbooks.current_id
+    return print_no_workbook_selected unless spreadsheet_id
+
+    token = current_token
+    return print_no_auth_mode unless token
+
+    remove_sheet(spreadsheet_id, name, token)
+  rescue Lexdrill::GoogleAuth::AuthError, Lexdrill::ServiceAccountAuth::AuthError => error
+    warn "drill: #{error.message}"
+    1
+  rescue Lexdrill::SheetsClient::ApiError => error
+    print_sheets_api_error(error, name)
+  rescue Lexdrill::HTTPClient::NetworkError => error
+    warn "drill: network error talking to Google (#{error.message})"
+    1
+  end
+
+  def remove_sheet(spreadsheet_id, name, token)
+    sheet_id = Lexdrill::SheetsClient.find_sheet_id(spreadsheet_id, name, token)
+    return print_no_such_sheet(name) unless sheet_id
+
+    Lexdrill::SheetsClient.delete_sheet(spreadsheet_id, sheet_id, token)
+    puts "sheet removed: #{name.inspect}"
+    0
+  end
+
+  def print_sh_remove_usage
+    warn "usage: drill sh remove <name>"
+    1
+  end
+
+  def print_no_such_sheet(name)
+    warn "drill: no tab named #{name.inspect} in the current workbook"
+    1
+  end
+
+  def run_sh_use
+    name = argv[2]
+    return print_sh_use_usage unless name
+
+    spreadsheet_id = Lexdrill::Workbooks.current_id
+    return print_no_workbook_selected unless spreadsheet_id
+
+    token = current_token
+    return print_no_auth_mode unless token
+
+    select_sheet(spreadsheet_id, name, token)
+  rescue Lexdrill::GoogleAuth::AuthError, Lexdrill::ServiceAccountAuth::AuthError => error
+    warn "drill: #{error.message}"
+    1
+  rescue Lexdrill::SheetsClient::ApiError => error
+    print_sheets_api_error(error, name)
+  rescue Lexdrill::HTTPClient::NetworkError => error
+    warn "drill: network error talking to Google (#{error.message})"
+    1
+  end
+
+  def select_sheet(spreadsheet_id, name, token)
+    sheet_id = Lexdrill::SheetsClient.find_sheet_id(spreadsheet_id, name, token)
+    return print_no_such_sheet(name) unless sheet_id
+
+    Lexdrill::Workbooks.set_current_sheet(name, sheet_id)
+    perform_pull(spreadsheet_id, name, token)
+  end
+
+  def print_sh_use_usage
+    warn "usage: drill sh use <name>"
+    1
+  end
+
+  def run_open
+    url = Lexdrill::Workbooks.current_url
+    return print_no_workbook_selected unless url
+
+    sheet_id = Lexdrill::Workbooks.current_sheet_id
+    Lexdrill::Browser.open(sheet_id ? "#{url}#gid=#{sheet_id}" : url)
+    0
+  end
+
+  def print_no_sheet_selected
+    warn "drill: no sheet selected; run `drill sh use <name>` first"
+    1
+  end
+
+  def run_push
+    spreadsheet_id = Lexdrill::Workbooks.current_id
+    return print_no_workbook_selected unless spreadsheet_id
+
+    sheet_name = Lexdrill::Workbooks.current_sheet
+    return print_no_sheet_selected unless sheet_name
+
+    token = current_token
+    return print_no_auth_mode unless token
+
+    perform_push(spreadsheet_id, sheet_name, token)
   rescue Lexdrill::GoogleAuth::AuthError, Lexdrill::ServiceAccountAuth::AuthError => error
     warn "drill: #{error.message}"
     1
@@ -395,36 +650,28 @@ class Lexdrill::CLI
     1
   end
 
-  def perform_export(sheet_name, spreadsheet_id, token)
-    rows = export_rows
+  def perform_push(spreadsheet_id, sheet_name, token)
+    rows = push_rows
     Lexdrill::SheetsClient.overwrite_sheet(spreadsheet_id, sheet_name, rows, token)
-    puts "exported #{rows.size} word(s) to #{sheet_name.inspect}"
+    puts "pushed #{rows.size} word(s) to #{sheet_name.inspect}"
     0
   end
 
-  def export_rows
+  def push_rows
     Lexdrill::WordList.words.map { |word| [word] }
   end
 
-  def print_export_usage
-    warn "usage: drill export <sheet-name>"
-    1
-  end
+  def run_pull
+    spreadsheet_id = Lexdrill::Workbooks.current_id
+    return print_no_workbook_selected unless spreadsheet_id
 
-  def print_no_remote
-    warn "drill: no remote spreadsheet configured; run `drill remote <url>` (service account) " \
-         "or `drill oauth <url>` (personal login) first"
-    1
-  end
+    sheet_name = Lexdrill::Workbooks.current_sheet
+    return print_no_sheet_selected unless sheet_name
 
-  def run_import
-    sheet_name = argv[1]
-    return print_import_usage unless sheet_name
+    token = current_token
+    return print_no_auth_mode unless token
 
-    target = sheets_target
-    return print_no_remote unless target
-
-    perform_import(sheet_name, *target)
+    perform_pull(spreadsheet_id, sheet_name, token)
   rescue Lexdrill::GoogleAuth::AuthError, Lexdrill::ServiceAccountAuth::AuthError => error
     warn "drill: #{error.message}"
     1
@@ -435,22 +682,17 @@ class Lexdrill::CLI
     1
   end
 
-  def perform_import(sheet_name, spreadsheet_id, token)
+  def perform_pull(spreadsheet_id, sheet_name, token)
     words = Lexdrill::SheetsClient.read_column(spreadsheet_id, sheet_name, token)
-    return print_empty_import(sheet_name) if words.empty?
+    return print_empty_pull(sheet_name) if words.empty?
 
     File.write(Lexdrill::WordList::PATH, "#{words.join("\n")}\n", encoding: "UTF-8")
-    puts "imported #{words.size} word(s) from #{sheet_name.inspect}"
+    puts "pulled #{words.size} word(s) from #{sheet_name.inspect}"
     0
   end
 
-  def print_import_usage
-    warn "usage: drill import <sheet-name>"
-    1
-  end
-
-  def print_empty_import(sheet_name)
-    warn "drill: #{sheet_name.inspect} has no data to import"
+  def print_empty_pull(sheet_name)
+    warn "drill: #{sheet_name.inspect} has no data to pull"
     1
   end
 
@@ -458,7 +700,7 @@ class Lexdrill::CLI
     status = error.status
     message = error.message
     case status
-    when 404 then warn "drill: spreadsheet not found or not accessible (check `drill remote`/`drill oauth`)"
+    when 404 then warn "drill: spreadsheet not found or not accessible (check `drill wb index`)"
     when 403 then warn "drill: access denied — make sure the spreadsheet is shared with the right account"
     when 400 then print_400_error(message, sheet_name)
     else warn "drill: Google Sheets API error (#{status}): #{message}"
