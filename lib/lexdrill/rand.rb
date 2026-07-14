@@ -2,10 +2,10 @@
 
 # Global "how often to actually show a word" setting, applied by
 # `drill next` itself (both automatic hook-triggered calls and manual
-# invocations respect it equally). Lives at ~/.drill.rand as a plain
-# integer; defaults to 1 (show every time).
+# invocations respect it equally). Stored as a plain integer; defaults to
+# 1 (show every time).
 module Lexdrill::Rand
-  PATH = File.join(Dir.home, ".drill.rand")
+  PATH = Lexdrill::Config.path("rand")
   DEFAULT = 1
 
   def self.value

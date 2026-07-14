@@ -14,8 +14,8 @@ module Lexdrill::Inspector
       Toggle:        #{toggle_summary}
       Beat:          #{beat_summary}
       Rand:          #{rand_summary}
-      Format:        #{Lexdrill::Format.current}
-      LEXDRILL_PATH: #{ENV.fetch('LEXDRILL_PATH', '(not set)')}
+      Color:         #{Lexdrill::Color.current}
+      Config dir:    #{Lexdrill::Config::DIR}
     REPORT
   end
 

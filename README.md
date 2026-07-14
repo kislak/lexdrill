@@ -33,8 +33,9 @@ this — rvm keeps gem executable directories on `PATH` automatically.
 
 ## Usage
 
-Create a `.drill.txt` file — one word or phrase per line — in your home directory,
-or in a specific project directory to give that project its own list:
+All of lexdrill's state lives in one place: `~/.drill/` (mode `0700`). It's a
+single global config — no per-project lists, no environment variable
+overrides. Create `~/.drill/words` yourself — one word or phrase per line:
 
 ```
 apple
@@ -42,27 +43,18 @@ banana
 cherry
 ```
 
-If you don't create one, `drill next` seeds `~/.drill.txt` with a default
+If you don't create one, `drill next` seeds `~/.drill/words` with a default
 starter list (a set of NLP presuppositions) the first time it runs, so
 there's always something to drill.
 
 Run `drill next` to print the current word and advance to the next one.
-There are two output styles (`drill format simple|full`, `simple` is the
-default):
-
-**simple** — the drill sign (always blue), a space, then the word (colored
-by its show count — see "Mastery" below), all on one line:
+Output is `counter/total` (the word's own 1-based position in the list)
+and the drill sign, together in yellow, a space, then the word (colored by
+its show count — see "Mastery" below), all on one line:
 ```
-⟳ apple
+1/6⟳ apple
 ```
-
-**full** — `counter/total⟳[loop_start-loop_end]` on one line, the word on
-the next, colored by the word's show count:
-```
-1/6⟳[1-3]
-apple
-```
-(word 1 of 6 total; currently in the loop spanning words 1-3)
+(word 1 of 6 total)
 
 ### Shell integration (one-time setup)
 
@@ -133,9 +125,7 @@ before moving on:
 drill beat 3 2     # loop size 3, repeat each loop 2 times
 ```
 
-`drill beat none` turns it back off (plain word-by-word again). This is a
-**global** setting — it applies everywhere, independent of which project's
-`.drill.txt` is currently active.
+`drill beat none` turns it back off (plain word-by-word again).
 
 There are also named shortcuts for common loop sizes, one word/phrase apart:
 
@@ -171,16 +161,18 @@ exits 0.
 
 ### Mastery (color by show count)
 
-Every time `next` shows a word it's tracked in `.drill.stats` (see
-[`drill stats`](#commands) below). On an **odd** show count, the word's
-color follows a blue → red gradient, one step per 100 shows — so at a
-glance, blue words are fresh and red words are heavily drilled. On an
-**even** show count, it's a vivid random color instead, just for visual
-variety. Once a word hits 1200 shows it's considered mastered and `next`
-stops selecting it (it still appears in `drill list`/`drill stats`, just no
-longer comes up automatically). If every word in the list has been
-mastered, `next` reports that on stderr and exits 1 instead of showing
-anything.
+Every time `next` shows a word it's tracked in `~/.drill/stats` (see
+[`drill stats`](#commands) below). By default (`drill color default`), the
+word's color follows a blue → red gradient, one step per 10 shows — so at
+a glance, blue words are fresh and red words are heavily drilled. Once a
+word hits 120 shows it's considered mastered and `next` stops selecting it
+(it still appears in `drill list`/`drill stats`, just no longer comes up
+automatically). If every word in the list has been mastered, `next`
+reports that on stderr and exits 1 instead of showing anything.
+
+Prefer a vivid random color every time instead of the gradient? Run
+`drill color random` (and `drill color default` to switch back — this is
+the default, so it's also the way to undo `random`).
 
 ### Google Sheets export
 
@@ -204,7 +196,7 @@ Either way, `export` always **overwrites** the named tab (creating it
 first if it doesn't exist yet) with the current word list, one phrase per
 row, so it stays an exact mirror even if the list shrinks. `import` is the
 reverse: it reads column A of the tab (ignoring any other columns, like an
-old export's show counts) and **replaces** your local `.drill.txt` —
+old export's show counts) and **replaces** your local `~/.drill/words` —
 useful for editing the list in Sheets and pulling changes back down, or
 seeding a fresh machine from an existing sheet.
 
@@ -230,9 +222,9 @@ a real secret you must keep local.
    field in the downloaded JSON).
 5. Open your target Google Sheet → **Share** → paste that email → grant
    **Editor** access → uncheck "Notify people" → Share.
-6. Save the downloaded key file to `~/.drill.gcp-service-account.json` on
-   your machine (`drill` reads it from that fixed path and sets it to mode
-   `0600`; it's never embedded in the gem or committed anywhere).
+6. Save the downloaded key file to `~/.drill/gcp-service-account.json` on
+   your machine (`drill` reads it from that fixed path; it's never embedded
+   in the gem or committed anywhere).
 
 ```bash
 drill remote 'https://docs.google.com/spreadsheets/d/1opBP4APL5SUvepm9qwjIYRNtDZdoY1Ee87F5PWdxaMg/edit?usp=sharing'
@@ -247,7 +239,7 @@ short-lived JWT with the local key file.
 Uses the OAuth 2.0 **Device Authorization Grant** ("visit this URL, enter
 this code," the same style of flow `gcloud auth login` uses) — you approve
 access to your own account once, and the resulting token is cached locally
-at `~/.drill.gcp-token.json` (mode `0600`), never published or shared.
+at `~/.drill/gcp-token.json` (mode `0600`), never published or shared.
 
 The OAuth client id/secret embedded in `lib/lexdrill/google_auth.rb` are
 **not** secret for this use — Google's own docs say client credentials for
@@ -288,11 +280,11 @@ itself automatically).
 |---|---|
 | `drill next` | Print the current word and advance |
 | `drill start` / `drill stop` | Pause/resume the automatic per-prompt hook (doesn't affect manual `next`) |
-| `drill inspect` | Show the active `.drill.txt`/`.drill.counter`/`.drill.stats` paths, word count, counter value, toggle, beat, and rand state |
+| `drill inspect` | Show the active config directory, word count, counter value, toggle, beat, rand, and color state |
 | `drill hook zsh\|bash` | Print the shell integration snippet (used above) |
 | `drill beat <2-8> <repetitions>` / `drill beat none` | Set or disable the rhythm |
 | `drill polka\|waltz\|rock\|jazz\|jiga\|balkan\|samba <repetitions>` | Shorthand for a fixed loop size (see table above) |
-| `drill format simple\|full` | Set the output style (`simple` is the default) |
+| `drill color random\|default` | Color each shown word randomly, or by its show count (`default`) |
 | `drill add <text>` | Append a new item to the end of the list |
 | `drill list` | Show how many times each item has been shown, numbered |
 | `drill open` | Open the list file in `$EDITOR`/`$VISUAL` (falls back to `vi`) |

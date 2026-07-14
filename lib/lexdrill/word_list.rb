@@ -1,28 +1,26 @@
 # frozen_string_literal: true
 
-# Reads vocabulary words/phrases from a `.drill.txt` file, one per line, and
+# Reads vocabulary words/phrases from the words file, one per line, and
 # advances a persisted counter to show "the current word" each time. On a
-# fresh install with no project-local or LEXDRILL_PATH-overridden list, seeds
-# ~/.drill.txt with a default starter list instead of coming up empty. Words
-# that have graduated (see Lexdrill::Stats) are excluded from `.next` but
-# remain in `.words` for `list`/`stats` to report.
+# fresh install, seeds the file with a default starter list instead of
+# coming up empty. Words that have graduated (see Lexdrill::Stats) are
+# excluded from `.next` but remain in `.words` for `list`/`stats` to report.
 class Lexdrill::WordList
-  PATH = Lexdrill::Config::DRILL_PATH
-  COUNTER_PATH = Lexdrill::Config::COUNTER_PATH
-  HOME_PATH = Lexdrill::Config.home_drill_path
+  PATH = Lexdrill::Config.path("words")
+  COUNTER_PATH = Lexdrill::Config.path("counter")
 
   def self.words
-    seed_default_at_home
+    seed_default
     @words ||= File.exist?(PATH) && File.readlines(PATH, encoding: "UTF-8").map(&:strip).reject(&:empty?)
     @words ||= []
   end
 
-  def self.seed_default_at_home
-    return if PATH != HOME_PATH || File.exist?(PATH)
+  def self.seed_default
+    return if File.exist?(PATH)
 
     File.write(PATH, Lexdrill::DefaultWords::TEXT, encoding: "UTF-8")
   end
-  private_class_method :seed_default_at_home
+  private_class_method :seed_default
 
   def self.next
     active = active_words

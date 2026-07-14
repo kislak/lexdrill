@@ -3,14 +3,13 @@
 require "fileutils"
 
 # Global rhythm config: repeats loops of `loop_size` consecutive words
-# `repetitions` times before advancing to the next loop. Lives at
-# ~/.drill.beat, independent of whichever project's .drill.txt is active.
-# Disabled (plain word-by-word advance) unless explicitly configured.
-# `drill beat rand` selects a third mode (marked by the literal contents
-# "rand") where WordList.next ignores the counter/rhythm entirely and picks
-# a uniformly random word each time instead.
+# `repetitions` times before advancing to the next loop. Disabled (plain
+# word-by-word advance) unless explicitly configured. `drill beat rand`
+# selects a third mode (marked by the literal contents "rand") where
+# WordList.next ignores the counter/rhythm entirely and picks a uniformly
+# random word each time instead.
 module Lexdrill::Beat
-  PATH = File.join(Dir.home, ".drill.beat")
+  PATH = Lexdrill::Config.path("beat")
   MIN_LOOP_SIZE = 2
   MAX_LOOP_SIZE = 8
   DEFAULT_REPETITIONS = 8

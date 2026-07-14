@@ -14,7 +14,7 @@ require "fileutils"
 # PATH below, obtained only after this specific user's own interactive
 # consent, which never leaves this machine and is never published.
 module Lexdrill::GoogleAuth
-  PATH = File.join(Dir.home, ".drill.gcp-token.json")
+  PATH = Lexdrill::Config.path("gcp-token.json")
 
   CLIENT_ID = "608056429593-ncdgh4bnfpuf9486l2rlt7g763h1gl6g.apps.googleusercontent.com"
   CLIENT_SECRET = "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"

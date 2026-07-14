@@ -18,44 +18,22 @@ RSpec.describe Lexdrill::CLI do
       expect(exit_code).to eq(1)
     end
 
-    it "prints the current word in full format and returns 0" do
+    it "prints the current word as counter/total, the blue drill sign, a space, then the word, and returns 0" do
       Dir.mktmpdir("lexdrill-cli-next-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
-        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
         stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
+        stub_const("Lexdrill::Color::PATH", File.join(dir, ".drill.color"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
-        Lexdrill::Format.set("full")
 
         exit_code = nil
         expect do
           exit_code = described_class.new(["next"]).start
-        end.to output(%r{\A\e\[[\d;]+m1/2⟳\[1-2\]\nalpha\e\[0m\n\z}).to_stdout
-        expect(exit_code).to eq(0)
-      end
-    end
-
-    it "prints simple-mode output as the blue drill sign, a space, then the word colored by its show count" do
-      Dir.mktmpdir("lexdrill-cli-next-simple-spec") do |dir|
-        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
-        stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
-        stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
-        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
-        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
-        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
-        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
-        Lexdrill::WordList.instance_variable_set(:@words, nil)
-        File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
-        Lexdrill::Format.set("simple")
-
-        exit_code = nil
-        expect do
-          exit_code = described_class.new(["next"]).start
-        end.to output(/\A\e\[34m⟳\e\[0m \e\[[\d;]+malpha\e\[0m\n\z/).to_stdout
+        end.to output(%r{\A\e\[33m1/2⟳\e\[0m \e\[[\d;]+malpha\e\[0m\n\z}).to_stdout
         expect(exit_code).to eq(0)
       end
     end
@@ -66,7 +44,6 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
-        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
         stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
@@ -84,7 +61,6 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
-        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
         stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
@@ -104,18 +80,17 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
-        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
         stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
+        stub_const("Lexdrill::Color::PATH", File.join(dir, ".drill.color"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
-        Lexdrill::Format.set("full")
         Lexdrill::Toggle.stop
 
         exit_code = nil
         expect do
           exit_code = described_class.new(["next"]).start
-        end.to output(%r{\A\e\[[\d;]+m1/2⟳\[1-2\]\nalpha\e\[0m\n\z}).to_stdout
+        end.to output(%r{\A\e\[33m1/2⟳\e\[0m \e\[[\d;]+malpha\e\[0m\n\z}).to_stdout
         expect(exit_code).to eq(0)
       end
     end
@@ -167,7 +142,7 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
-        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
+        stub_const("Lexdrill::Color::PATH", File.join(dir, ".drill.color"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
         stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
@@ -272,30 +247,36 @@ RSpec.describe Lexdrill::CLI do
       end
     end
 
-    it "sets the format to simple" do
-      Dir.mktmpdir("lexdrill-cli-format-simple-spec") do |dir|
-        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
+    it "sets the color mode to random" do
+      Dir.mktmpdir("lexdrill-cli-color-random-spec") do |dir|
+        stub_const("Lexdrill::Color::PATH", File.join(dir, ".drill.color"))
 
-        exit_code = described_class.new(%w[format simple]).start
+        exit_code = described_class.new(%w[color random]).start
         expect(exit_code).to eq(0)
-        expect(Lexdrill::Format.current).to eq("simple")
+        expect(Lexdrill::Color.current).to eq("random")
       end
     end
 
-    it "sets the format back to full" do
-      Dir.mktmpdir("lexdrill-cli-format-full-spec") do |dir|
-        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
-        Lexdrill::Format.set("simple")
+    it "sets the color mode back to default" do
+      Dir.mktmpdir("lexdrill-cli-color-default-spec") do |dir|
+        stub_const("Lexdrill::Color::PATH", File.join(dir, ".drill.color"))
+        Lexdrill::Color.set("random")
 
-        exit_code = described_class.new(%w[format full]).start
+        exit_code = described_class.new(%w[color default]).start
         expect(exit_code).to eq(0)
-        expect(Lexdrill::Format.current).to eq("full")
+        expect(Lexdrill::Color.current).to eq("default")
       end
     end
 
-    it "reports usage on stderr and returns 1 for an invalid format" do
+    it "reports usage on stderr and returns 1 when color is given no mode" do
       exit_code = nil
-      expect { exit_code = described_class.new(%w[format bogus]).start }.to output(/usage/).to_stderr
+      expect { exit_code = described_class.new(["color"]).start }.to output(/usage/).to_stderr
+      expect(exit_code).to eq(1)
+    end
+
+    it "reports an invalid color mode on stderr and returns 1" do
+      exit_code = nil
+      expect { exit_code = described_class.new(%w[color bogus]).start }.to output(/unknown color mode/).to_stderr
       expect(exit_code).to eq(1)
     end
 
@@ -499,9 +480,9 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
         stub_const("Lexdrill::Toggle::PATH", File.join(dir, ".drill.disabled"))
         stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
-        stub_const("Lexdrill::Format::PATH", File.join(dir, ".drill.format"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
         stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
+        stub_const("Lexdrill::Color::PATH", File.join(dir, ".drill.color"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
         File.write(Lexdrill::WordList::PATH, "alpha\n")
         Lexdrill::Rand.set(5)
@@ -769,7 +750,7 @@ RSpec.describe Lexdrill::CLI do
     end
 
     it "reports the service-account auth error message on stderr and returns 1" do
-      allow(Lexdrill::Remote).to receive(:configured?).and_return(true)
+      allow(Lexdrill::Remote).to receive_messages(configured?: true, spreadsheet_id: "sheet-id")
       allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(false)
       allow(Lexdrill::ServiceAccountAuth).to receive(:fetch_token!)
         .and_raise(Lexdrill::ServiceAccountAuth::AuthError, "no service account key found")
@@ -781,7 +762,7 @@ RSpec.describe Lexdrill::CLI do
 
     it "reports the auth error message on stderr and returns 1" do
       allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
-      allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(true)
+      allow(Lexdrill::OauthRemote).to receive_messages(configured?: true, spreadsheet_id: "sheet-id")
       allow(Lexdrill::GoogleAuth).to receive(:ensure_token!)
         .and_raise(Lexdrill::GoogleAuth::AuthError, "access denied")
 
@@ -791,23 +772,29 @@ RSpec.describe Lexdrill::CLI do
     end
 
     it "reports a 404 Sheets API error with a helpful hint" do
-      allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
-      allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(true)
-      allow(Lexdrill::OauthRemote).to receive(:spreadsheet_id).and_return("sheet-id")
-      allow(Lexdrill::GoogleAuth).to receive(:ensure_token!).and_return("tok")
-      allow(Lexdrill::SheetsClient).to receive(:overwrite_sheet)
-        .and_raise(Lexdrill::SheetsClient::ApiError.new(404, "not found"))
+      Dir.mktmpdir("lexdrill-cli-export-404-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\n")
 
-      exit_code = nil
-      expect do
-        exit_code = described_class.new(%w[export Sheet1]).start
-      end.to output(/not found or not accessible/).to_stderr
-      expect(exit_code).to eq(1)
+        allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
+        allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(true)
+        allow(Lexdrill::OauthRemote).to receive(:spreadsheet_id).and_return("sheet-id")
+        allow(Lexdrill::GoogleAuth).to receive(:ensure_token!).and_return("tok")
+        allow(Lexdrill::SheetsClient).to receive(:overwrite_sheet)
+          .and_raise(Lexdrill::SheetsClient::ApiError.new(404, "not found"))
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(%w[export Sheet1]).start
+        end.to output(/not found or not accessible/).to_stderr
+        expect(exit_code).to eq(1)
+      end
     end
 
     it "reports a network error on stderr and returns 1" do
       allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
-      allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(true)
+      allow(Lexdrill::OauthRemote).to receive_messages(configured?: true, spreadsheet_id: "sheet-id")
       allow(Lexdrill::GoogleAuth).to receive(:ensure_token!)
         .and_raise(Lexdrill::HTTPClient::NetworkError, "getaddrinfo failed")
 
@@ -869,7 +856,7 @@ RSpec.describe Lexdrill::CLI do
 
     it "reports the auth error message on stderr and returns 1 for import" do
       allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
-      allow(Lexdrill::OauthRemote).to receive(:configured?).and_return(true)
+      allow(Lexdrill::OauthRemote).to receive_messages(configured?: true, spreadsheet_id: "sheet-id")
       allow(Lexdrill::GoogleAuth).to receive(:ensure_token!)
         .and_raise(Lexdrill::GoogleAuth::AuthError, "access denied")
 

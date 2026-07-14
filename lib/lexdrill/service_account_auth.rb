@@ -13,7 +13,7 @@ require "base64"
 # published, and lexdrill never writes or transmits it anywhere except in
 # the signed JWT sent directly to Google's own token endpoint.
 module Lexdrill::ServiceAccountAuth
-  PATH = File.join(Dir.home, ".drill.gcp-service-account.json")
+  PATH = Lexdrill::Config.path("gcp-service-account.json")
   TOKEN_URL = "https://oauth2.googleapis.com/token"
   SCOPE = "https://www.googleapis.com/auth/spreadsheets"
   GRANT_TYPE = "urn:ietf:params:oauth:grant-type:jwt-bearer"

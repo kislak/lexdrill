@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 # Global "which Google Sheet to export to via the OAuth device-flow login"
-# setting. Lives at ~/.drill.oauth-remote as a plain spreadsheet id, parsed
-# out of a normal Google Sheets share URL. Set via `drill oauth <url>`.
-# See Lexdrill::Remote for the separate, service-account-based flow.
+# setting. Stored as a plain spreadsheet id, parsed out of a normal
+# Google Sheets share URL. Set via `drill oauth <url>`. See
+# Lexdrill::Remote for the separate, service-account-based flow.
 module Lexdrill::OauthRemote
-  PATH = File.join(Dir.home, ".drill.oauth-remote")
+  PATH = Lexdrill::Config.path("oauth-remote")
   URL_PATTERN = %r{/spreadsheets/d/([a-zA-Z0-9_-]+)}
 
   def self.set(url)

@@ -3,15 +3,14 @@
 require "json"
 
 # Tracks how many times each word/phrase has been shown by `next`, persisted
-# as a word => count JSON object at `.drill.stats` (same base path as
-# `.drill.txt`/`.drill.counter`). Every BUCKET_SIZE shows moves a word into
-# the next display-color bucket (see Lexdrill::Colorizer); once a word
-# reaches GRADUATION_THRESHOLD shows it's considered mastered and `next`
-# stops selecting it.
+# as a word => count JSON object in the stats file. Every BUCKET_SIZE shows
+# moves a word into the next display-color bucket (see Lexdrill::Colorizer);
+# once a word reaches GRADUATION_THRESHOLD shows it's considered mastered
+# and `next` stops selecting it.
 module Lexdrill::Stats
-  PATH = Lexdrill::Config::STATS_PATH
-  BUCKET_SIZE = 100
-  GRADUATION_THRESHOLD = 1200
+  PATH = Lexdrill::Config.path("stats")
+  BUCKET_SIZE = 10
+  GRADUATION_THRESHOLD = 120
 
   def self.record(word)
     data = load

@@ -1,41 +1,19 @@
 # frozen_string_literal: true
 
 RSpec.describe Lexdrill::Config do
-  around do |example|
-    Dir.mktmpdir("lexdrill-config-cwd") do |cwd|
-      @cwd = File.realpath(cwd)
-      Dir.chdir(@cwd) { with_env("LEXDRILL_PATH" => nil) { example.run } }
+  describe ".path" do
+    it "joins the given filename onto the config directory" do
+      expect(described_class.path("words")).to eq(File.join(described_class::DIR, "words"))
     end
   end
 
-  describe ".dir_path" do
-    it "returns the current directory when it has .drill.txt" do
-      File.write(File.join(@cwd, ".drill.txt"), "a\n")
-      expect(described_class.dir_path).to eq(@cwd)
+  describe "DIR" do
+    it "is a .drill directory under the home folder" do
+      expect(described_class::DIR).to eq(File.join(Dir.home, ".drill"))
     end
 
-    it "returns nil when the current directory has no .drill.txt" do
-      expect(described_class.dir_path).to be_nil
-    end
-  end
-
-  describe ".base_path" do
-    it "uses LEXDRILL_PATH when set, regardless of the current directory" do
-      File.write(File.join(@cwd, ".drill.txt"), "a\n")
-      with_env("LEXDRILL_PATH" => "/tmp/custom-base") do
-        expect(described_class.base_path).to eq("/tmp/custom-base")
-      end
-    end
-
-    it "prefers the current directory over $HOME when it has .drill.txt" do
-      File.write(File.join(@cwd, ".drill.txt"), "a\n")
-      expect(described_class.base_path).to eq(@cwd)
-    end
-
-    # DEFAULT_PATH is a constant fixed to the real Dir.home at load time, so
-    # this deliberately checks against the real $HOME rather than faking it.
-    it "falls back to $HOME when the current directory has none and LEXDRILL_PATH is unset" do
-      expect(described_class.base_path).to eq(Dir.home)
+    it "exists on disk" do
+      expect(File.directory?(described_class::DIR)).to be true
     end
   end
 end

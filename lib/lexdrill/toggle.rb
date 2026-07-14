@@ -2,11 +2,10 @@
 
 require "fileutils"
 
-# Global pause/resume switch for the shell hook, independent of which
-# project's .drill.txt is active. Enabled by default; the marker file's
-# presence means stopped.
+# Global pause/resume switch for the shell hook. Enabled by default; the
+# marker file's presence means stopped.
 module Lexdrill::Toggle
-  PATH = File.join(Dir.home, ".drill.disabled")
+  PATH = Lexdrill::Config.path("disabled")
 
   def self.enabled?
     !File.exist?(PATH)

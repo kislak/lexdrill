@@ -3,10 +3,11 @@
 # Wraps text in an ANSI color code. `paint_by_count` maps a word's show
 # count onto a blue -> red truecolor gradient, one step per
 # Lexdrill::Stats::BUCKET_SIZE shows, so a word's color reflects how many
-# times it's been drilled — except on an even count, where a random vivid
-# color is used instead, for a bit of visual variety.
+# times it's been drilled — unless `drill color random` is set (see
+# Lexdrill::Color), in which case a vivid random color is used every time
+# instead.
 module Lexdrill::Colorizer
-  BLUE = 34
+  YELLOW = 33
   GRADIENT_STEPS = Lexdrill::Stats::GRADUATION_THRESHOLD / Lexdrill::Stats::BUCKET_SIZE
   HUE_DEGREES = 360
   # Which of {peak, trough, 0} each RGB channel takes in each 60-degree hue
@@ -20,12 +21,12 @@ module Lexdrill::Colorizer
     %i[peak zero trough]
   ].freeze
 
-  def self.paint_blue(text)
-    wrap(text, BLUE)
+  def self.paint_yellow(text)
+    wrap(text, YELLOW)
   end
 
   def self.paint_by_count(text, count)
-    code = count.even? ? random_code : gradient_code(count)
+    code = Lexdrill::Color.random? ? random_code : gradient_code(count)
     wrap(text, code)
   end
 

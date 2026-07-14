@@ -11,7 +11,7 @@ class Lexdrill::CLI
     run_inspect: %w[inspect],
     run_beat: %w[beat],
     run_beat_alias: %w[polka waltz rock jazz jiga balkan samba],
-    run_format: %w[format],
+    run_color: %w[color],
     run_add: %w[add],
     run_list: %w[list],
     run_open: %w[open],
@@ -67,7 +67,7 @@ class Lexdrill::CLI
         drill beat rand                 Ignore the counter/rhythm; show a random item each time
         drill polka|waltz|rock|jazz|jiga|balkan|samba [repetitions]
                         Shorthand for a fixed loop size (2 through 8, in order)
-        drill format simple|full   Set the output style (simple is the default)
+        drill color random|default   Color each word randomly, or by its show count (default)
         drill add <text>   Append a new item to the end of the list
         drill list         Show how many times each item has been shown
         drill open         Open the list file in $EDITOR/$VISUAL (falls back to vi)
@@ -75,7 +75,7 @@ class Lexdrill::CLI
         drill rand <n>     drill next shows a word ~1-in-n times (n=1 is every time)
         drill go <number>  Jump so the next `next` shows item <number> (1-based, see drill list)
         drill remote <url>          Set the Google Sheet used by a local service account key
-                                    (~/.drill.gcp-service-account.json) — no interactive sign-in
+                                    (~/.drill/gcp-service-account.json) — no interactive sign-in
         drill oauth <url>           Set the Google Sheet used by the OAuth (personal-login) flow
         drill sheet                 Print a link to the currently active spreadsheet
         drill export <sheet-name>   Export the word list text to the given tab (overwrites its
@@ -92,7 +92,7 @@ class Lexdrill::CLI
     word = Lexdrill::WordList.next
     return print_next_failure unless word
 
-    puts colored_line(word)
+    puts Lexdrill::LineFormatter.format(word)
     0
   end
 
@@ -105,14 +105,6 @@ class Lexdrill::CLI
   def print_all_graduated
     warn "drill: every item has reached #{Lexdrill::Stats::GRADUATION_THRESHOLD} shows — nothing left to drill"
     1
-  end
-
-  def colored_line(word)
-    text = Lexdrill::LineFormatter.format(word)
-    return text if Lexdrill::Format.simple?
-
-    count = Lexdrill::Stats.counts.fetch(word, 0)
-    Lexdrill::Colorizer.paint_by_count(text, count)
   end
 
   def print_no_words(path)
@@ -203,16 +195,22 @@ class Lexdrill::CLI
     1
   end
 
-  def run_format
+  def run_color
     mode = argv[1]
-    return print_format_usage unless Lexdrill::Format::VALID.include?(mode)
+    return print_color_usage unless mode
+    return print_invalid_color(mode) unless Lexdrill::Color::VALID.include?(mode)
 
-    Lexdrill::Format.set(mode)
+    Lexdrill::Color.set(mode)
     0
   end
 
-  def print_format_usage
-    warn "usage: drill format <#{Lexdrill::Format::VALID.join('|')}>"
+  def print_color_usage
+    warn "usage: drill color <#{Lexdrill::Color::VALID.join('|')}>"
+    1
+  end
+
+  def print_invalid_color(mode)
+    warn "drill: unknown color mode #{mode.inspect} (expected #{Lexdrill::Color::VALID.join(' or ')})"
     1
   end
 

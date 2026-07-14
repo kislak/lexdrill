@@ -48,23 +48,9 @@ RSpec.describe Lexdrill::WordList do
       expect(described_class.words).to eq([])
     end
 
-    it "returns an empty list when the file does not exist" do
-      expect(described_class.words).to eq([])
-    end
-
-    it "seeds the default starter list when PATH is the ~/.drill.txt fallback and it's missing" do
-      home_path = File.join(@dir, ".drill.txt")
-      stub_const("Lexdrill::WordList::PATH", home_path)
-      stub_const("Lexdrill::WordList::HOME_PATH", home_path)
-
+    it "seeds the default starter list when the file is missing" do
       expect(described_class.words).to eq(Lexdrill::DefaultWords::WORDS)
-      expect(File.read(home_path)).to eq(Lexdrill::DefaultWords::TEXT)
-    end
-
-    it "does not seed when PATH is a project-local or overridden list, even if missing" do
-      described_class.words
-
-      expect(File.exist?(described_class::PATH)).to be false
+      expect(File.read(described_class::PATH)).to eq(Lexdrill::DefaultWords::TEXT)
     end
   end
 

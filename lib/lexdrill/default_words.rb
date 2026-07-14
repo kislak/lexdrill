@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-# The starter list seeded into ~/.drill.txt on first run, when neither an
-# LEXDRILL_PATH override nor a project-local .drill.txt exists yet.
+# The starter list seeded into the words file on first run.
 module Lexdrill::DefaultWords
   WORDS = [
     "The map is not the territory",

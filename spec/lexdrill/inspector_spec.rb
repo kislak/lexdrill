@@ -15,6 +15,7 @@ RSpec.describe Lexdrill::Inspector do
     stub_const("Lexdrill::Toggle::PATH", File.join(@dir, ".drill.disabled"))
     stub_const("Lexdrill::Rand::PATH", File.join(@dir, ".drill.rand"))
     stub_const("Lexdrill::Beat::PATH", File.join(@dir, ".drill.beat"))
+    stub_const("Lexdrill::Color::PATH", File.join(@dir, ".drill.color"))
     Lexdrill::WordList.instance_variable_set(:@words, nil)
   end
 
@@ -68,10 +69,18 @@ RSpec.describe Lexdrill::Inspector do
       expect(described_class.report).to include("random (ignores rhythm/counter)")
     end
 
-    it "reports LEXDRILL_PATH when set" do
-      with_env("LEXDRILL_PATH" => "/tmp/custom-base") do
-        expect(described_class.report).to include("/tmp/custom-base")
-      end
+    it "reports the color mode as default by default" do
+      expect(described_class.report).to include("Color:         default")
+    end
+
+    it "reports the color mode once set to random" do
+      Lexdrill::Color.set("random")
+
+      expect(described_class.report).to include("Color:         random")
+    end
+
+    it "reports the config directory" do
+      expect(described_class.report).to include("Config dir:    #{Lexdrill::Config::DIR}")
     end
   end
 end
