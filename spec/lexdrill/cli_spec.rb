@@ -145,6 +145,8 @@ RSpec.describe Lexdrill::CLI do
         stub_const("Lexdrill::Color::PATH", File.join(dir, ".drill.color"))
         stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
         stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
+        stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
+        stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
         Lexdrill::WordList.instance_variable_set(:@words, nil)
 
         exit_code = nil
@@ -615,8 +617,8 @@ RSpec.describe Lexdrill::CLI do
       end
     end
 
-    it "prints a link to the remote (service account) spreadsheet when it is the more recent one" do
-      Dir.mktmpdir("lexdrill-cli-sheet-remote-spec") do |dir|
+    it "prints a link to the remote (service account) workbook when it is the more recent one" do
+      Dir.mktmpdir("lexdrill-cli-wb-remote-spec") do |dir|
         stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
         stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
         File.write(Lexdrill::OauthRemote::PATH, "oauth-sheet-id")
@@ -625,14 +627,14 @@ RSpec.describe Lexdrill::CLI do
 
         exit_code = nil
         expect do
-          exit_code = described_class.new(["sheet"]).start
+          exit_code = described_class.new(["wb"]).start
         end.to output("https://docs.google.com/spreadsheets/d/remote-sheet-id/edit\n").to_stdout
         expect(exit_code).to eq(0)
       end
     end
 
-    it "prints a link to the oauth spreadsheet when it is the more recent one" do
-      Dir.mktmpdir("lexdrill-cli-sheet-oauth-spec") do |dir|
+    it "prints a link to the oauth workbook when it is the more recent one" do
+      Dir.mktmpdir("lexdrill-cli-wb-oauth-spec") do |dir|
         stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
         stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
         File.write(Lexdrill::Remote::PATH, "remote-sheet-id")
@@ -641,21 +643,60 @@ RSpec.describe Lexdrill::CLI do
 
         exit_code = nil
         expect do
-          exit_code = described_class.new(["sheet"]).start
+          exit_code = described_class.new(["wb"]).start
         end.to output("https://docs.google.com/spreadsheets/d/oauth-sheet-id/edit\n").to_stdout
         expect(exit_code).to eq(0)
       end
     end
 
-    it "reports on stderr and returns 1 when no remote/oauth spreadsheet is configured for sheet" do
-      Dir.mktmpdir("lexdrill-cli-sheet-no-remote-spec") do |dir|
+    it "reports on stderr and returns 1 when no remote/oauth workbook is configured for wb" do
+      Dir.mktmpdir("lexdrill-cli-wb-no-remote-spec") do |dir|
         stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
         stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
 
         exit_code = nil
-        expect { exit_code = described_class.new(["sheet"]).start }.to output(/no remote spreadsheet/).to_stderr
+        expect { exit_code = described_class.new(["wb"]).start }.to output(/no remote spreadsheet/).to_stderr
         expect(exit_code).to eq(1)
       end
+    end
+
+    it "lists the tab names in the current workbook" do
+      Dir.mktmpdir("lexdrill-cli-sheets-spec") do |dir|
+        stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
+        stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
+        allow(Lexdrill::OauthRemote).to receive_messages(configured?: true, spreadsheet_id: "sheet-id")
+        allow(Lexdrill::GoogleAuth).to receive(:ensure_token!).and_return("tok")
+        allow(Lexdrill::SheetsClient).to receive(:sheet_titles).with("sheet-id", "tok").and_return(%w[Sheet1 Archive])
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(["sheets"]).start
+        end.to output("Sheet1\nArchive\n").to_stdout
+        expect(exit_code).to eq(0)
+      end
+    end
+
+    it "reports on stderr and returns 1 when no remote/oauth workbook is configured for sheets" do
+      Dir.mktmpdir("lexdrill-cli-sheets-no-remote-spec") do |dir|
+        stub_const("Lexdrill::Remote::PATH", File.join(dir, ".drill.remote"))
+        stub_const("Lexdrill::OauthRemote::PATH", File.join(dir, ".drill.oauth-remote"))
+
+        exit_code = nil
+        expect { exit_code = described_class.new(["sheets"]).start }.to output(/no remote spreadsheet/).to_stderr
+        expect(exit_code).to eq(1)
+      end
+    end
+
+    it "reports a Sheets API error on stderr and returns 1 for sheets" do
+      allow(Lexdrill::Remote).to receive(:configured?).and_return(false)
+      allow(Lexdrill::OauthRemote).to receive_messages(configured?: true, spreadsheet_id: "sheet-id")
+      allow(Lexdrill::GoogleAuth).to receive(:ensure_token!).and_return("tok")
+      allow(Lexdrill::SheetsClient).to receive(:sheet_titles)
+        .and_raise(Lexdrill::SheetsClient::ApiError.new(404, "not found"))
+
+      exit_code = nil
+      expect { exit_code = described_class.new(["sheets"]).start }.to output(/not found or not accessible/).to_stderr
+      expect(exit_code).to eq(1)
     end
 
     it "reports usage on stderr and returns 1 when export is given no sheet name" do

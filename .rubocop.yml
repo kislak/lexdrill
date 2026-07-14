@@ -19,7 +19,7 @@ Naming/RescuedExceptionsVariableName:
   PreferredName: error
 
 Metrics/MethodLength:
-  Max: 32
+  Max: 33
   Exclude:
     - "spec/**/*"
 

@@ -280,7 +280,7 @@ itself automatically).
 |---|---|
 | `drill next` | Print the current word and advance |
 | `drill start` / `drill stop` | Pause/resume the automatic per-prompt hook (doesn't affect manual `next`) |
-| `drill inspect` | Show the active config directory, word count, counter value, toggle, beat, rand, and color state |
+| `drill inspect` | Show the active config directory, word count, counter value, toggle, beat, rand, color, and remote state |
 | `drill hook zsh\|bash` | Print the shell integration snippet (used above) |
 | `drill beat <2-8> <repetitions>` / `drill beat none` | Set or disable the rhythm |
 | `drill polka\|waltz\|rock\|jazz\|jiga\|balkan\|samba <repetitions>` | Shorthand for a fixed loop size (see table above) |
@@ -293,6 +293,7 @@ itself automatically).
 | `drill go <number>` | Jump so the next `drill next` shows item `<number>` (1-based, see `drill list`) — prints nothing itself; refuses a graduated item; has no effect while `drill beat rand` is active, since that mode ignores the counter entirely |
 | `drill remote <url>` | Set the Google Sheet used by the service account flow (global, parses the spreadsheet id out of a normal share URL); whichever of `drill remote`/`drill oauth` was set more recently wins |
 | `drill oauth <url>` | Set the Google Sheet used by the OAuth (personal-login) flow (global, parses the spreadsheet id out of a normal share URL); whichever of `drill remote`/`drill oauth` was set more recently wins |
-| `drill sheet` | Print a link to whichever spreadsheet (`drill remote`/`drill oauth`) is currently active |
+| `drill wb` | Print a link to whichever workbook (spreadsheet) is currently active (`drill remote`/`drill oauth`) |
+| `drill sheets` | List the tab names in the currently active workbook |
 | `drill export <sheet-name>` | Export the word list text to the named tab (created if it doesn't exist), overwriting it; uses whichever of `drill remote`/`drill oauth` was configured most recently (first OAuth use triggers a one-time Google device-flow sign-in) |
 | `drill import <sheet-name>` | Replace the local word list with column A of the named tab |

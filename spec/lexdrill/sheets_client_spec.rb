@@ -61,6 +61,29 @@ RSpec.describe Lexdrill::SheetsClient do
     end
   end
 
+  describe ".sheet_titles" do
+    it "returns the title of every tab in the workbook" do
+      allow(Lexdrill::HTTPClient).to receive(:json_get).and_return(
+        response(200,
+                 "sheets" => [{ "properties" => { "title" => "Sheet1" } },
+                              { "properties" => { "title" => "Archive" } }])
+      )
+
+      titles = described_class.sheet_titles(spreadsheet_id, token)
+
+      expect(titles).to eq(%w[Sheet1 Archive])
+      expected_url = "https://sheets.googleapis.com/v4/spreadsheets/abc123?fields=sheets.properties.title"
+      expect(Lexdrill::HTTPClient).to have_received(:json_get)
+        .with(expected_url, headers: { "Authorization" => "Bearer at1" })
+    end
+
+    it "returns an empty array when the workbook has no sheets" do
+      allow(Lexdrill::HTTPClient).to receive(:json_get).and_return(response(200, {}))
+
+      expect(described_class.sheet_titles(spreadsheet_id, token)).to eq([])
+    end
+  end
+
   describe ".overwrite_sheet" do
     def classify_post(url, body)
       return :clear if url.end_with?(":clear")

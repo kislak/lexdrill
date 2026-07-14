@@ -15,8 +15,13 @@ module Lexdrill::Inspector
       Beat:          #{beat_summary}
       Rand:          #{rand_summary}
       Color:         #{Lexdrill::Color.current}
+      Remote:        #{remote_summary}
       Config dir:    #{Lexdrill::Config::DIR}
     REPORT
+  end
+
+  def self.remote_summary
+    Lexdrill::RemoteTarget.url || "not configured"
   end
 
   def self.words_summary

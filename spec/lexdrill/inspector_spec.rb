@@ -16,6 +16,8 @@ RSpec.describe Lexdrill::Inspector do
     stub_const("Lexdrill::Rand::PATH", File.join(@dir, ".drill.rand"))
     stub_const("Lexdrill::Beat::PATH", File.join(@dir, ".drill.beat"))
     stub_const("Lexdrill::Color::PATH", File.join(@dir, ".drill.color"))
+    stub_const("Lexdrill::Remote::PATH", File.join(@dir, ".drill.remote"))
+    stub_const("Lexdrill::OauthRemote::PATH", File.join(@dir, ".drill.oauth-remote"))
     Lexdrill::WordList.instance_variable_set(:@words, nil)
   end
 
@@ -77,6 +79,16 @@ RSpec.describe Lexdrill::Inspector do
       Lexdrill::Color.set("random")
 
       expect(described_class.report).to include("Color:         random")
+    end
+
+    it "reports not configured when no remote is set" do
+      expect(described_class.report).to include("Remote:        not configured")
+    end
+
+    it "reports the active spreadsheet URL once a remote is configured" do
+      Lexdrill::Remote.set("https://docs.google.com/spreadsheets/d/abc123/edit")
+
+      expect(described_class.report).to include("Remote:        https://docs.google.com/spreadsheets/d/abc123/edit")
     end
 
     it "reports the config directory" do

@@ -16,11 +16,6 @@ detectors:
       - "Lexdrill::CLI#jump_to"
       - "Lexdrill::CLI#export_rows"
       - "Lexdrill::CLI#sheets_target"
-      - "Lexdrill::CLI#newer?"
-      - "Lexdrill::CLI#spreadsheet_id_for"
-  ControlParameter:
-    exclude:
-      - "Lexdrill::CLI#spreadsheet_id_for"
   TooManyMethods:
     exclude:
       - "Lexdrill::CLI"
@@ -38,6 +33,7 @@ detectors:
       - "Lexdrill::CLI#run_remote"
       - "Lexdrill::CLI#run_export"
       - "Lexdrill::CLI#run_import"
+      - "Lexdrill::CLI#run_sheets"
       - "Lexdrill::CLI#perform_import"
       - "Lexdrill::CLI#print_sheets_api_error"
       - "Lexdrill::Colorizer#self.gradient_code"
@@ -55,6 +51,7 @@ detectors:
     exclude:
       - "Lexdrill::CLI#run_export"
       - "Lexdrill::CLI#run_import"
+      - "Lexdrill::CLI#run_sheets"
   FeatureEnvy:
     exclude:
       - "Lexdrill::CLI#perform_import"

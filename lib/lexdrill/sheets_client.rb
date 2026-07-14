@@ -77,6 +77,13 @@ module Lexdrill::SheetsClient
     data.fetch("values", []).filter_map { |row| row[0]&.strip }.reject(&:empty?)
   end
 
+  # The titles of every tab in the workbook, for `drill sheets`.
+  def self.sheet_titles(spreadsheet_id, access_token)
+    url = "#{BASE_URL}/#{spreadsheet_id}?fields=sheets.properties.title"
+    data = handle_response(Lexdrill::HTTPClient.json_get(url, headers: auth_header(access_token)))
+    data.fetch("sheets", []).map { |sheet| sheet.dig("properties", "title") }
+  end
+
   def self.auth_header(token)
     { "Authorization" => "Bearer #{token}" }
   end

@@ -20,7 +20,8 @@ class Lexdrill::CLI
     run_go: %w[go],
     run_remote: %w[remote],
     run_oauth: %w[oauth],
-    run_sheet: %w[sheet],
+    run_wb: %w[wb],
+    run_sheets: %w[sheets],
     run_export: %w[export],
     run_import: %w[import]
   }.freeze
@@ -77,7 +78,8 @@ class Lexdrill::CLI
         drill remote <url>          Set the Google Sheet used by a local service account key
                                     (~/.drill/gcp-service-account.json) — no interactive sign-in
         drill oauth <url>           Set the Google Sheet used by the OAuth (personal-login) flow
-        drill sheet                 Print a link to the currently active spreadsheet
+        drill wb                    Print a link to the currently active workbook (spreadsheet)
+        drill sheets                List the tab names in the currently active workbook
         drill export <sheet-name>   Export the word list text to the given tab (overwrites its
                                     contents); uses whichever of drill remote/drill oauth was set
                                     more recently (oauth opens a one-time sign-in on first use)
@@ -343,37 +345,36 @@ class Lexdrill::CLI
   # either command always takes effect. Returns [spreadsheet_id,
   # access_token], or nil if neither is configured.
   def sheets_target
-    kind = latest_remote_kind
-    spreadsheet_id = spreadsheet_id_for(kind)
+    kind = Lexdrill::RemoteTarget.kind
+    spreadsheet_id = Lexdrill::RemoteTarget.spreadsheet_id
     return unless spreadsheet_id
 
     [spreadsheet_id, kind == :remote ? Lexdrill::ServiceAccountAuth.fetch_token! : Lexdrill::GoogleAuth.ensure_token!]
   end
 
-  def spreadsheet_id_for(kind)
-    case kind
-    when :remote then Lexdrill::Remote.spreadsheet_id
-    when :oauth then Lexdrill::OauthRemote.spreadsheet_id
-    end
-  end
+  def run_wb
+    url = Lexdrill::RemoteTarget.url
+    return print_no_remote unless url
 
-  def latest_remote_kind
-    remote_set = Lexdrill::Remote.configured?
-    oauth_set = Lexdrill::OauthRemote.configured?
-    return :remote if remote_set && (!oauth_set || newer?(Lexdrill::Remote::PATH, Lexdrill::OauthRemote::PATH))
-    return :oauth if oauth_set
-
-    nil
-  end
-
-  def newer?(path, other_path) = File.mtime(path) >= File.mtime(other_path)
-
-  def run_sheet
-    spreadsheet_id = spreadsheet_id_for(latest_remote_kind)
-    return print_no_remote unless spreadsheet_id
-
-    puts "https://docs.google.com/spreadsheets/d/#{spreadsheet_id}/edit"
+    puts url
     0
+  end
+
+  def run_sheets
+    target = sheets_target
+    return print_no_remote unless target
+
+    spreadsheet_id, token = target
+    Lexdrill::SheetsClient.sheet_titles(spreadsheet_id, token).each { |title| puts title }
+    0
+  rescue Lexdrill::GoogleAuth::AuthError, Lexdrill::ServiceAccountAuth::AuthError => error
+    warn "drill: #{error.message}"
+    1
+  rescue Lexdrill::SheetsClient::ApiError => error
+    print_sheets_api_error(error)
+  rescue Lexdrill::HTTPClient::NetworkError => error
+    warn "drill: network error talking to Google (#{error.message})"
+    1
   end
 
   def run_export
@@ -453,16 +454,21 @@ class Lexdrill::CLI
     1
   end
 
-  def print_sheets_api_error(error, sheet_name)
+  def print_sheets_api_error(error, sheet_name = nil)
     status = error.status
     message = error.message
     case status
     when 404 then warn "drill: spreadsheet not found or not accessible (check `drill remote`/`drill oauth`)"
     when 403 then warn "drill: access denied — make sure the spreadsheet is shared with the right account"
-    when 400 then warn "drill: #{message} (is #{sheet_name.inspect} a real tab in the spreadsheet?)"
+    when 400 then print_400_error(message, sheet_name)
     else warn "drill: Google Sheets API error (#{status}): #{message}"
     end
     1
+  end
+
+  def print_400_error(message, sheet_name)
+    hint = " (is #{sheet_name.inspect} a real tab in the spreadsheet?)" if sheet_name
+    warn "drill: #{message}#{hint}"
   end
 
   def print_unknown_command(command)
