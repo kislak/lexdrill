@@ -1,18 +1,18 @@
 # frozen_string_literal: true
 
 # Formats a shown word for display, on one line:
-# "{index}/{total}{SEPARATOR} {word}" — index is the word's own 1-based
+# "{SEPARATOR}{index}/{total} {word}" — index is the word's own 1-based
 # position in the list, re-derived through Lexdrill::Beat so it stays
-# meaningful even when a rhythm repeats steps. The counter/total and the
-# separator are painted yellow, as one unit; the word is colored by its
-# show count (see Lexdrill::Colorizer).
+# meaningful even when a rhythm repeats steps. The separator and
+# counter/total are painted yellow, as one unit; the word is colored by
+# its show count (see Lexdrill::Colorizer).
 module Lexdrill::LineFormatter
   SEPARATOR = "⟳"
 
   def self.format(word)
     total = Lexdrill::WordList.words.size
     count = Lexdrill::Stats.counts.fetch(word, 0)
-    prefix = Lexdrill::Colorizer.paint_yellow("#{loop_index(total) + 1}/#{total}#{SEPARATOR}")
+    prefix = Lexdrill::Colorizer.paint_yellow("#{SEPARATOR}#{loop_index(total) + 1}/#{total}")
     "#{prefix} #{Lexdrill::Colorizer.paint_by_count(word, count)}"
   end
 

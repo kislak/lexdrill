@@ -18,7 +18,7 @@ RSpec.describe Lexdrill::CLI do
       expect(exit_code).to eq(1)
     end
 
-    it "prints the current word as counter/total, the blue drill sign, a space, then the word, and returns 0" do
+    it "prints the current word as the yellow drill sign, counter/total, a space, then the word, and returns 0" do
       Dir.mktmpdir("lexdrill-cli-next-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
         stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
@@ -33,7 +33,7 @@ RSpec.describe Lexdrill::CLI do
         exit_code = nil
         expect do
           exit_code = described_class.new(["next"]).start
-        end.to output(%r{\A\e\[33m1/2⟳\e\[0m \e\[[\d;]+malpha\e\[0m\n\z}).to_stdout
+        end.to output(%r{\A\e\[33m⟳1/2\e\[0m \e\[[\d;]+malpha\e\[0m\n\z}).to_stdout
         expect(exit_code).to eq(0)
       end
     end
@@ -90,7 +90,7 @@ RSpec.describe Lexdrill::CLI do
         exit_code = nil
         expect do
           exit_code = described_class.new(["next"]).start
-        end.to output(%r{\A\e\[33m1/2⟳\e\[0m \e\[[\d;]+malpha\e\[0m\n\z}).to_stdout
+        end.to output(%r{\A\e\[33m⟳1/2\e\[0m \e\[[\d;]+malpha\e\[0m\n\z}).to_stdout
         expect(exit_code).to eq(0)
       end
     end
