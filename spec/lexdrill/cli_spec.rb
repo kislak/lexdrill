@@ -476,6 +476,25 @@ RSpec.describe Lexdrill::CLI do
       end
     end
 
+    it "`drill all` is also an alias for `drill list`" do
+      Dir.mktmpdir("lexdrill-cli-all-alias-spec") do |dir|
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        stub_const("Lexdrill::WordList::COUNTER_PATH", File.join(dir, ".drill.counter"))
+        stub_const("Lexdrill::Beat::PATH", File.join(dir, ".drill.beat"))
+        stub_const("Lexdrill::Stats::PATH", File.join(dir, ".drill.stats"))
+        stub_const("Lexdrill::Rand::PATH", File.join(dir, ".drill.rand"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
+        Lexdrill::WordList.next
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(["all"]).start
+        end.to output("1. alpha (1)\n2. beta (0)\n").to_stdout
+        expect(exit_code).to eq(0)
+      end
+    end
+
     it "reports on stderr and returns 1 when stats is run with no words" do
       Dir.mktmpdir("lexdrill-cli-stats-empty-spec") do |dir|
         stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
@@ -858,6 +877,25 @@ RSpec.describe Lexdrill::CLI do
       end
     end
 
+    it "`drill ls` is also an alias for `drill sh index`" do
+      Dir.mktmpdir("lexdrill-cli-ls-alias-spec") do |dir|
+        stub_const("Lexdrill::Workbooks::PATH", File.join(dir, ".drill.workbooks.json"))
+        stub_const("Lexdrill::AuthMode::PATH", File.join(dir, ".drill.auth-mode"))
+        Lexdrill::Workbooks.add("NLP", "abc123")
+        Lexdrill::Workbooks.set_current_sheet("Sheet1", 0)
+        Lexdrill::AuthMode.set("oauth")
+        allow(Lexdrill::GoogleAuth).to receive(:ensure_token!).and_return("tok")
+        allow(Lexdrill::SheetsClient).to receive(:sheet_titles).with("abc123", "tok").and_return(%w[Sheet1])
+        sign = Lexdrill::Colorizer.paint_yellow(Lexdrill::LineFormatter::SEPARATOR)
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(["ls"]).start
+        end.to output("#{sign} Sheet1\n").to_stdout
+        expect(exit_code).to eq(0)
+      end
+    end
+
     it "creates a new tab with sh add, making it current when none was selected" do
       Dir.mktmpdir("lexdrill-cli-sh-add-spec") do |dir|
         stub_const("Lexdrill::Workbooks::PATH", File.join(dir, ".drill.workbooks.json"))
@@ -967,6 +1005,34 @@ RSpec.describe Lexdrill::CLI do
     it "reports usage on stderr and returns 1 when sh use is given no name" do
       exit_code = nil
       expect { exit_code = described_class.new(%w[sh use]).start }.to output(/usage/).to_stderr
+      expect(exit_code).to eq(1)
+    end
+
+    it "`drill use <name>` is also an alias for `drill sh use <name>`" do
+      Dir.mktmpdir("lexdrill-cli-use-alias-spec") do |dir|
+        stub_const("Lexdrill::Workbooks::PATH", File.join(dir, ".drill.workbooks.json"))
+        stub_const("Lexdrill::AuthMode::PATH", File.join(dir, ".drill.auth-mode"))
+        stub_const("Lexdrill::WordList::PATH", File.join(dir, ".drill.txt"))
+        Lexdrill::WordList.instance_variable_set(:@words, nil)
+        File.write(Lexdrill::WordList::PATH, "old-word\n")
+        Lexdrill::Workbooks.add("NLP", "abc123")
+        Lexdrill::AuthMode.set("oauth")
+        allow(Lexdrill::GoogleAuth).to receive(:ensure_token!).and_return("tok")
+        allow(Lexdrill::SheetsClient).to receive(:find_sheet_id).with("abc123", "Sheet1", "tok").and_return(0)
+        allow(Lexdrill::SheetsClient).to receive(:read_column).with("abc123", "Sheet1", "tok").and_return(%w[alpha])
+
+        exit_code = nil
+        expect do
+          exit_code = described_class.new(%w[use Sheet1]).start
+        end.to output(/pulled 1 word\(s\) from "Sheet1"/).to_stdout
+        expect(exit_code).to eq(0)
+        expect(Lexdrill::Workbooks.current_sheet).to eq("Sheet1")
+      end
+    end
+
+    it "reports usage on stderr and returns 1 when drill use is given no name" do
+      exit_code = nil
+      expect { exit_code = described_class.new(["use"]).start }.to output(/usage/).to_stderr
       expect(exit_code).to eq(1)
     end
 

@@ -299,7 +299,7 @@ drill sh
 drill sh use Sheet1
 ```
 
-`drill sh` (or `drill sh index`) lists the tabs in the active workbook,
+`drill sh` (or `drill sh index`, or `drill ls`) lists the tabs in the active workbook,
 marking the active one with the drill sign (⟳). `drill sh use <name>`
 switches to a tab **and immediately pulls it** — replacing your local
 word list with that tab's column A. `drill sh add <name>` creates a new,
@@ -338,14 +338,15 @@ stderr; the word is still added locally either way.
 | `drill polka\|waltz\|rock\|jazz\|jiga\|balkan\|samba <repetitions>` | Shorthand for a fixed loop size (see table above) |
 | `drill color random\|default` | Color each shown word randomly, or by its show count (`default`) |
 | `drill add <text>` | Append a new item to the end of the list; also pushes to the active tab, if one is selected |
-| `drill list` | Show how many times each item has been shown, numbered |
+| `drill list` | Show how many times each item has been shown, numbered (`drill all` also works) |
 | `drill edit` | Open the list file in `$EDITOR`/`$VISUAL` (falls back to `vi`) |
 | `drill stats` | Print all items as `<count>\t<phrase>` (tab-separated), sorted by show count, highest first |
 | `drill rand <n>` | `drill next` shows a word ~1-in-`n` times (`n=1` is every time, the default) |
 | `drill go <number>` | Jump so the next `drill next` shows item `<number>` (1-based, see `drill list`) — prints nothing itself; refuses a graduated item; has no effect while `drill beat rand` is active, since that mode ignores the counter entirely |
 | `drill remote` / `drill oauth` | Choose the Google Sheets auth mode: local service account key, or personal OAuth login (global, applies to every workbook) |
 | `drill wb` / `wb index` / `add <url>` / `remove <name>` / `use <name>` | List (bare `drill wb` is an alias for `wb index`)/add/forget/switch known workbooks; `add` names the workbook after the spreadsheet's own title; the active one is marked with the drill sign |
-| `drill sh` / `sh index` / `add <name>` / `remove <name>` / `use <name>` | List (bare `drill sh` is an alias for `sh index`)/create/delete/switch tabs in the active workbook; `use` also pulls the tab's contents; the active one is marked with the drill sign |
+| `drill sh` / `drill ls` / `sh index` / `add <name>` / `remove <name>` / `use <name>` | List (`drill sh`/`drill ls` are aliases for `sh index`)/create/delete/switch tabs in the active workbook; `use` also pulls the tab's contents; the active one is marked with the drill sign |
+| `drill use <name>` | Alias for `drill sh use <name>` |
 | `drill open` | Open the active tab in your default browser |
 | `drill push` | Overwrite the active tab with the current word list text |
 | `drill pull` | Replace the local word list with column A of the active tab |

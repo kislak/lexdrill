@@ -13,7 +13,7 @@ class Lexdrill::CLI
     run_beat_alias: %w[polka waltz rock jazz jiga balkan samba],
     run_color: %w[color],
     run_add: %w[add],
-    run_list: %w[list],
+    run_list: %w[list all],
     run_edit: %w[edit],
     run_stats: %w[stats],
     run_rand: %w[rand],
@@ -21,7 +21,8 @@ class Lexdrill::CLI
     run_remote: %w[remote],
     run_oauth: %w[oauth],
     run_wb: %w[wb],
-    run_sh: %w[sh],
+    run_sh: %w[sh ls],
+    run_use: %w[use],
     run_open: %w[open],
     run_push: %w[push],
     run_pull: %w[pull]
@@ -71,7 +72,7 @@ class Lexdrill::CLI
                         Shorthand for a fixed loop size (2 through 8, in order)
         drill color random|default   Color each word randomly, or by its show count (default)
         drill add <text>   Append a new item to the list (and push, if a sheet is selected)
-        drill list         Show how many times each item has been shown
+        drill list         Show how many times each item has been shown (drill all also works)
         drill edit         Open the list file in $EDITOR/$VISUAL (falls back to vi)
         drill stats        Print items as <count>\t<phrase>, tab-separated, highest count first
         drill rand <n>     drill next shows a word ~1-in-n times (n=1 is every time)
@@ -84,11 +85,12 @@ class Lexdrill::CLI
         drill wb add <url>           Add a workbook by URL (named after its own title)
         drill wb remove <name>       Forget a workbook
         drill wb use <name>          Switch the active workbook
-        drill sh                     Alias for drill sh index
+        drill sh                     Alias for drill sh index (drill ls also works)
         drill sh index               List the tabs in the active workbook
         drill sh add <name>          Create a new tab
         drill sh remove <name>       Delete a tab
         drill sh use <name>          Switch the active tab (pulls its contents)
+        drill use <name>             Alias for drill sh use <name>
         drill open                   Open the active tab in your browser
         drill push                   Push the word list text to the active tab (overwrites it)
         drill pull                   Replace the local word list with the active tab's column A
@@ -582,7 +584,17 @@ class Lexdrill::CLI
   end
 
   def run_sh_use
-    name = argv[2]
+    use_sheet(argv[2])
+  end
+
+  # `drill use <name>` is a shortcut for `drill sh use <name>` — the name
+  # sits at a different argv position, so this and run_sh_use share the
+  # same underlying logic rather than duplicating it.
+  def run_use
+    use_sheet(argv[1])
+  end
+
+  def use_sheet(name)
     return print_sh_use_usage unless name
 
     spreadsheet_id = Lexdrill::Workbooks.current_id
@@ -611,7 +623,7 @@ class Lexdrill::CLI
   end
 
   def print_sh_use_usage
-    warn "usage: drill sh use <name>"
+    warn "usage: drill sh use <name> (or drill use <name>)"
     1
   end
 

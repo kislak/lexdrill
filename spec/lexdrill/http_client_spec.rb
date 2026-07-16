@@ -6,13 +6,20 @@ RSpec.describe Lexdrill::HTTPClient do
   end
 
   describe ".post_form" do
-    it "posts form-encoded params and returns a Response with integer code and body" do
-      http = instance_double(Net::HTTP, post: instance_double(Net::HTTPResponse, code: "200", body: '{"ok":true}'))
+    it "posts form-encoded params with an explicit Content-Type, returning a Response" do
+      request = instance_double(Net::HTTP::Post)
+      allow(Net::HTTP::Post).to receive(:new).and_return(request)
+      allow(request).to receive(:[]=)
+      allow(request).to receive(:body=)
+
+      http = instance_double(Net::HTTP, request: instance_double(Net::HTTPResponse, code: "200", body: '{"ok":true}'))
       stub_http { http }
 
       response = described_class.post_form("https://example.com/token", { "a" => "1" })
 
-      expect(http).to have_received(:post).with("/token", "a=1")
+      expect(request).to have_received(:[]=).with("Content-Type", "application/x-www-form-urlencoded")
+      expect(request).to have_received(:body=).with("a=1")
+      expect(http).to have_received(:request).with(request)
       expect(response.code).to eq(200)
       expect(response.body).to eq('{"ok":true}')
     end

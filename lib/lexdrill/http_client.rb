@@ -18,9 +18,17 @@ module Lexdrill::HTTPClient
 
   class NetworkError < StandardError; end
 
+  # Net::HTTP's 2-arg instance `#post(path, body)` sends no Content-Type
+  # header at all — most token endpoints tolerate that (defaulting to
+  # form-urlencoded), but not all do, so this sets it explicitly.
   def self.post_form(url, params)
     uri = URI(url)
-    perform(uri) { |http| http.post(uri.path, URI.encode_www_form(params)) }
+    perform(uri) do |http|
+      request = Net::HTTP::Post.new(uri.request_uri)
+      request["Content-Type"] = "application/x-www-form-urlencoded"
+      request.body = URI.encode_www_form(params)
+      http.request(request)
+    end
   end
 
   def self.json_post(url, body:, headers: {})
