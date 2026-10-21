@@ -18,14 +18,14 @@ RSpec.describe Lexdrill::LineFormatter do
   end
 
   describe ".format" do
-    it "is the drill sign in yellow, followed by the counter/total and word colored by its show count" do
+    it "is the drill sign and the counter/total in yellow, a space, then the word colored by its show count" do
       File.write(Lexdrill::WordList::PATH, "alpha\nbeta\n")
       Lexdrill::WordList.next # advances the counter to 1, records one show of "alpha"
 
       result = described_class.format("alpha")
-      expected_sign = Lexdrill::Colorizer.paint_yellow("⟳")
-      expected_message = Lexdrill::Colorizer.paint_by_count("1/2 alpha", 1)
-      expect(result).to eq("#{expected_sign}#{expected_message}")
+      expected_prefix = Lexdrill::Colorizer.paint_yellow("⟳1/2")
+      expected_word = Lexdrill::Colorizer.paint_by_count("alpha", 1)
+      expect(result).to eq("#{expected_prefix} #{expected_word}")
     end
 
     it "shows the word's own position when a beat is configured" do

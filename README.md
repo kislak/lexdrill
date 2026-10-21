@@ -48,9 +48,9 @@ starter list (a set of NLP presuppositions) the first time it runs, so
 there's always something to drill.
 
 Run `drill next` to print the current word and advance to the next one.
-Output is the drill sign in yellow, followed by `counter/total` (the word's
-own 1-based position in the list) and the word (both colored by its show
-count — see "Mastery" below), all on one line:
+Output is the drill sign and `counter/total` (the word's own 1-based
+position in the list), together in yellow, a space, then the word (colored
+by its show count — see "Mastery" below), all on one line:
 ```
 ⟳1/6 apple
 ```
