@@ -7,7 +7,7 @@
 module Lexdrill::ShellSnippet
   ZSH = <<~SNIPPET
     drill_precmd() {
-      [[ -f "$HOME/.drill.disabled" ]] && return
+      [[ -f "$HOME/.drill/disabled" || -f "$HOME/.drill.disabled" ]] && return
       command drill next 2>/dev/null
     }
     if [[ -z "${precmd_functions[(r)drill_precmd]}" ]]; then
@@ -24,6 +24,7 @@ module Lexdrill::ShellSnippet
   # codes).
   BASH = <<~SNIPPET
     drill_precmd() {
+      [ -f "$HOME/.drill/disabled" ] && return
       [ -f "$HOME/.drill.disabled" ] && return
       command drill next >/dev/tty 2>/dev/null
     }
